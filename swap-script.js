@@ -364,24 +364,27 @@ async function calculateBuyQuote() {
 async function calculateSellQuote() {
     try {
         const vntAmountInputValue = document.getElementById('vntAmountInput').value;
-        
+        console.log('calculateSellQuote input:', { vntAmountInputValue, currentAccount, isEligibleForSell, minSellAmount, vntDecimals, usdtDecimals });
+
         if (!vntAmountInputValue || isNaN(vntAmountInputValue) || vntAmountInputValue.trim() === '') {
             document.getElementById('sellQuoteResult').classList.add('hidden');
             document.getElementById('approveSellBtn').disabled = true;
             document.getElementById('sellBtn').disabled = true;
             return;
         }
-        
+
         const vntAmount = toTokenUnits(vntAmountInputValue, vntDecimals);
+        console.log('vntAmount (base units):', vntAmount.toString());
+
         const minSell = web3.utils.toBN(minSellAmount);
-        
         if (vntAmount.lt(minSell)) {
             document.getElementById('sellQuoteResult').classList.add('hidden');
             document.getElementById('approveSellBtn').disabled = true;
             document.getElementById('sellBtn').disabled = true;
+            showMessage(`Minimum sale is ${formatUnits(minSellAmount, vntDecimals)} VNT`, 'error');
             return;
         }
-        
+
         if (!isEligibleForSell) {
             showMessage('You are not eligible to sell VNT. Only staking reward recipients and previous buyers can sell.', 'error');
             document.getElementById('sellQuoteResult').classList.add('hidden');
@@ -389,41 +392,45 @@ async function calculateSellQuote() {
             document.getElementById('sellBtn').disabled = true;
             return;
         }
-        
-        const usdtAmount = await swapContract.methods.getSellQuote(vntAmount.toString()).call();
-        const usdtFormatted = formatUnits(usdtAmount, usdtDecimals);
 
-        // update an element for USDT received. The UI may use an input or a span.
-        // Try to update both value and textContent to be resilient to HTML structure.
-        const usdtEl = document.getElementById('usdtAmount');
-        if (usdtEl) {
-            try {
-                if ('value' in usdtEl) usdtEl.value = usdtFormatted;
-                else usdtEl.textContent = usdtFormatted;
-            } catch (e) {
-                // fallback
-                usdtEl.textContent = usdtFormatted;
+        // CALL contract for quote
+        const usdtAmountRaw = await swapContract.methods.getSellQuote(vntAmount.toString()).call();
+        console.log('getSellQuote raw result:', usdtAmountRaw);
+
+        // If contract returned "0", show info and disable selling
+        if (web3.utils.toBN(usdtAmountRaw).isZero()) {
+            const outEl = document.getElementById('usdtAmountReceived') || document.getElementById('usdtAmount');
+            if (outEl) {
+                if ('value' in outEl) outEl.value = '0';
+                else outEl.textContent = '0';
             }
-        } else {
-            // fallback: if there is a dedicated output element for sell results, try it
-            const usdtOut = document.getElementById('usdtAmountReceived') || document.getElementById('sellUsdtAmount');
-            if (usdtOut) {
-                if ('value' in usdtOut) usdtOut.value = usdtFormatted;
-                else usdtOut.textContent = usdtFormatted;
-            }
+            document.getElementById('sellQuoteResult').classList.remove('hidden');
+            document.getElementById('approveSellBtn').disabled = true;
+            document.getElementById('sellBtn').disabled = true;
+            showMessage('Quote returned 0 USDT — check contract price, decimals or eligibility.', 'error');
+            return;
         }
-        
+
+        const usdtFormatted = formatUnits(usdtAmountRaw, usdtDecimals);
+        console.log('usdtFormatted:', usdtFormatted);
+
+        const usdtOutEl = document.getElementById('usdtAmountReceived') || document.getElementById('usdtAmount');
+        if (usdtOutEl) {
+            if ('value' in usdtOutEl) usdtOutEl.value = usdtFormatted;
+            else usdtOutEl.textContent = usdtFormatted;
+        }
         document.getElementById('sellQuoteResult').classList.remove('hidden');
-        
+
         const isApproved = await checkSellApprovalStatus(vntAmount.toString());
         document.getElementById('approveSellBtn').disabled = isApproved;
         document.getElementById('sellBtn').disabled = !isApproved;
-        
+
     } catch (error) {
         console.error('Sell quote calculation error:', error);
         document.getElementById('sellQuoteResult').classList.add('hidden');
         document.getElementById('approveSellBtn').disabled = true;
         document.getElementById('sellBtn').disabled = true;
+        showMessage('Error calculating sell quote. Check console for details.', 'error');
     }
 }
 
