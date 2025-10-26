@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VNT Token Swap</title>
+    <link rel="stylesheet" href="swap-style.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <nav class="navbar">
+        <img src="assets/logo.png" alt="VNST Logo" class="logo">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <ul id="navMenu">
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="stake.html">Stake</a></li>
+            <li><a href="team.html">Team</a></li>
+            <li><a href="swap.html">Swap</a></li>
+            <li class="nav-btn-container"></li>
+        </ul>   
+    </nav>
+    <div class="container">
+        <header>
+            <h1>VNT Token Swap</h1>
+            <button id="connectWalletBtn" class="gold-btn">Connect Wallet</button>
+            <div id="walletInfo" class="hidden">
+                <p>Connected: <span id="walletAddress"></span></p>
+                <p>VNT Balance: <span id="vntBalance">0</span></p>
+                <p>USDT Balance: <span id="usdtBalance">0</span></p>
+                <div id="walletStatus" class="wallet-status"></div>
+            </div>
+        </header>
+
+        <!-- Buy/Sell Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="buy">Buy VNT</button>
+            <button class="tab-button" data-tab="sell">Sell VNT</button>
+        </div>
+
+        <!-- Buy Section -->
+        <div id="buySection" class="tab-content active">
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="info-label">Buy Price:</span>
+                    <span class="info-value" id="buyPrice">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Minimum Buy:</span>
+                    <span class="info-value" id="minBuyAmount">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Your Daily Limit:</span>
+                    <span class="info-value" id="buyLimit">Loading...</span>
+                </div>
+            </div>
+
+            <div class="swap-container">
+                <div class="swap-form">
+                    <div class="input-group">
+                        <label for="usdtAmount">USDT Amount</label>
+                        <!-- keep id 'usdtAmount' (used by script) and allow decimals with step="any" -->
+                        <input type="number" id="usdtAmount" placeholder="Enter USDT amount" step="any" min="0" autocomplete="off">
+                        <div id="buyQuoteResult" class="quote-result hidden">
+                            <p>You will receive: <span id="vntAmount">0</span> VNT</p>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="approveBuyBtn" class="gold-btn" disabled>Approve USDT</button>
+                        <button id="buyBtn" class="gold-btn" disabled>Buy VNT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sell Section -->
+        <div id="sellSection" class="tab-content">
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="info-label">Sell Price:</span>
+                    <span class="info-value" id="sellPrice">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Minimum Sell:</span>
+                    <span class="info-value" id="minSellAmount">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Your Daily Limit:</span>
+                    <span class="info-value" id="sellLimit">Loading...</span>
+                </div>
+            </div>
+
+            <div class="swap-container">
+                <div class="swap-form">
+                    <div class="input-group">
+                        <label for="vntAmountInput">VNT Amount</label>
+                        <input type="number" id="vntAmountInput" placeholder="Enter VNT amount" step="any" min="0" autocomplete="off">
+                        <div id="sellQuoteResult" class="quote-result hidden">
+                            <!-- Changed id to 'usdtAmountReceived' to avoid duplicate id with buy input -->
+                            <p>You will receive: <span id="usdtAmountReceived">0</span> USDT</p>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="approveSellBtn" class="gold-btn" disabled>Approve VNT</button>
+                        <button id="sellBtn" class="gold-btn" disabled>Sell VNT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="contract-info">
+            <p>VNT Contract: <span id="vntContract">Loading...</span></p>
+            <button id="copyContractBtn" class="gold-btn small">Copy Address</button>
+        </div>
+
+        <div id="statusMessages"></div>
+    </div>
+
+    <script src="swap-script.js"></script>
+</body>
+</html>
