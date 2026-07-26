@@ -10,7 +10,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <img src="assets/logo.png" alt="VirsenSwap Logo" class="logo">
+        <img src="assets/logo.png" alt="VirsenSwap Logo" class="logo" onerror="this.style.display='none'">
         <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         <ul id="navMenu">
             <li><a href="index.html">Home</a></li>
@@ -25,7 +25,7 @@
             <h1>VirsenSwap</h1>
             <button id="connectWalletBtn" class="gold-btn">Connect Wallet</button>
             <div id="walletInfo" class="hidden">
-                <p>Connected: <span id="walletAddress"></span></p>
+                <p>Connected: <span id="walletAddress">-</span></p>
                 <p>VNT Balance: <span id="vntBalance">0</span></p>
                 <p>VNST Balance: <span id="vnstBalance">0</span></p>
                 <p>USDT Balance: <span id="usdtBalance">0</span></p>
