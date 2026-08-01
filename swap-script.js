@@ -1,8 +1,8 @@
 const CONFIG = {
     testnet: {
-        swapContractAddress: "0x63Ce5ED1175BFA8cC764124D7da5Fd6aA6353Bd6", // आपका कॉन्ट्रैक्ट एड्रेस
-        vntTokenAddress: "0xa7e41CB0A41dbFC801408d3B577fCed150c4eeEc", // आपका VNT एड्रेस
-        vnstTokenAddress: "0x5C6cB004b50278c6726c3cBEDd25165c2072C46D", // आपका VNST एड्रेस
+        swapContractAddress: "0xCc35dFa87D9E2336475340388BC973ff8D9bDfc2", // आपका कॉन्ट्रैक्ट एड्रेस
+        vntTokenAddress: "0x7917B8A03EAEd57802DAc9cEd9E4A42477DB004c", // आपका VNT एड्रेस
+        vnstTokenAddress: "0x05eebbDa5a53B8358eb31dBB8Fb59EaCd1e43C61", // आपका VNST एड्रेस
         usdtTokenAddress: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", // Testnet USDT
         chainId: "0x61",
         rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/"
