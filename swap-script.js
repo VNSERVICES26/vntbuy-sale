@@ -1,6 +1,6 @@
 const CONFIG = {
     testnet: {
-        swapContractAddress: "0xCc35dFa87D9E2336475340388BC973ff8D9bDfc2", // आपका कॉन्ट्रैक्ट एड्रेस
+        swapContractAddress: "0xBb9454FAB6C873e9c89A92Faa2Eb163f83Bb0a7e", // आपका कॉन्ट्रैक्ट एड्रेस
         vntTokenAddress: "0x7917B8A03EAEd57802DAc9cEd9E4A42477DB004c", // आपका VNT एड्रेस
         vnstTokenAddress: "0x05eebbDa5a53B8358eb31dBB8Fb59EaCd1e43C61", // आपका VNST एड्रेस
         usdtTokenAddress: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", // Testnet USDT
