@@ -1,9 +1,9 @@
 const CONFIG = {
     testnet: {
-        swapContractAddress: "0xBb9454FAB6C873e9c89A92Faa2Eb163f83Bb0a7e", // आपका कॉन्ट्रैक्ट एड्रेस
-        vntTokenAddress: "0x7917B8A03EAEd57802DAc9cEd9E4A42477DB004c", // आपका VNT एड्रेस
-        vnstTokenAddress: "0x05eebbDa5a53B8358eb31dBB8Fb59EaCd1e43C61", // आपका VNST एड्रेस
-        usdtTokenAddress: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", // Testnet USDT
+        swapContractAddress: "0xBb9454FAB6C873e9c89A92Faa2Eb163f83Bb0a7e",
+        vntTokenAddress: "0x7917B8A03EAEd57802DAc9cEd9E4A42477DB004c",
+        vnstTokenAddress: "0x05eebbDa5a53B8358eb31dBB8Fb59EaCd1e43C61",
+        usdtTokenAddress: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
         chainId: "0x61",
         rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/"
     }
@@ -14,16 +14,179 @@ const NETWORK = 'testnet';
 let web3, swapContract, vntToken, vnstToken, usdtToken;
 let currentAccount = null;
 let vntDecimals = 18, vnstDecimals = 18, usdtDecimals = 18;
+let minVNTBuyAmount = 0, minVNSTBuyAmount = 0, minVNTSwapAmount = 0;
 let minSwapAmount = 0, swapFeeBNB = 0, vntPrice = 0, vnstPrice = 0, vntToVnstPrice = 0;
 let contractInitialized = false;
 
-// ✅ Fixed Gas Limit - Testnet के लिए safe
+// Gas Settings
 const GAS_LIMIT = 500000;
-const GAS_PRICE = '5000000000'; // 5 Gwei
+const GAS_PRICE = '5000000000';
 
-// Complete VirsenSwap ABI
-const SWAP_ABI = [{"inputs":[{"internalType":"address","name":"_vnt","type":"address"},{"internalType":"address","name":"_vnst","type":"address"},{"internalType":"address","name":"_usdt","type":"address"},{"internalType":"address payable","name":"_feeWallet","type":"address"},{"internalType":"address","name":"_vntTreasury","type":"address"},{"internalType":"address","name":"_vnstTreasury","type":"address"},{"internalType":"address","name":"_usdtTreasury","type":"address"},{"internalType":"uint256","name":"_vntPrice","type":"uint256"},{"internalType":"uint256","name":"_vnstPrice","type":"uint256"},{"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"},{"internalType":"uint256","name":"_swapFeeBNB","type":"uint256"},{"internalType":"uint256","name":"_minSwapAmount","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"AlreadyPaused","type":"error"},{"inputs":[],"name":"ContractPaused","type":"error"},{"inputs":[],"name":"FeeMismatch","type":"error"},{"inputs":[],"name":"InsufficientAllowance","type":"error"},{"inputs":[],"name":"InsufficientBalance","type":"error"},{"inputs":[],"name":"InvalidAddress","type":"error"},{"inputs":[],"name":"InvalidAmount","type":"error"},{"inputs":[],"name":"InvalidFee","type":"error"},{"inputs":[],"name":"InvalidToken","type":"error"},{"inputs":[],"name":"MinSwapNotMet","type":"error"},{"inputs":[],"name":"NotOwner","type":"error"},{"inputs":[],"name":"NotPaused","type":"error"},{"inputs":[],"name":"ReentrancyGuard","type":"error"},{"inputs":[],"name":"SlippageExceeded","type":"error"},{"inputs":[],"name":"TransferFailed","type":"error"},{"inputs":[],"name":"ZeroMinSwap","type":"error"},{"inputs":[],"name":"ZeroPrice","type":"error"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"oldWallet","type":"address"},{"indexed":false,"internalType":"address","name":"newWallet","type":"address"}],"name":"FeeWalletUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"oldMin","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newMin","type":"uint256"}],"name":"MinSwapUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"pair","type":"string"},{"indexed":false,"internalType":"uint256","name":"oldPrice","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"PriceUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"address","name":"fromToken","type":"address"},{"indexed":false,"internalType":"address","name":"toToken","type":"address"},{"indexed":false,"internalType":"uint256","name":"amountIn","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amountOut","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"minAmountOut","type":"uint256"}],"name":"SwapExecuted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"oldFee","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"SwapFeeUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"treasury","type":"string"},{"indexed":false,"internalType":"address","name":"oldAddress","type":"address"},{"indexed":false,"internalType":"address","name":"newAddress","type":"address"}],"name":"TreasuryUpdated","type":"event"},{"anonymous":false,"inputs":[],"name":"Unpaused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"usdtSpent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"vnstReceived","type":"uint256"}],"name":"VNSTPurchased","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"usdtSpent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"vntReceived","type":"uint256"}],"name":"VNTPurchased","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"vntSold","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"usdtReceived","type":"uint256"}],"name":"VNTSold","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"vntSpent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"vnstReceived","type":"uint256"}],"name":"VNTSwapped","type":"event"},{"stateMutability":"payable","type":"fallback"},{"inputs":[],"name":"USDT","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"VNST","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"VNT","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"},{"internalType":"uint256","name":"minVnstOut","type":"uint256"}],"name":"buyVNST","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"},{"internalType":"uint256","name":"minVntOut","type":"uint256"}],"name":"buyVNT","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"emergencyWithdrawAllBNB","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"emergencyWithdrawBNB","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"feeWallet","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getBNBBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractInfo","outputs":[{"internalType":"address","name":"_owner","type":"address"},{"internalType":"bool","name":"_paused","type":"bool"},{"internalType":"uint256","name":"_minSwap","type":"uint256"},{"internalType":"uint256","name":"_fee","type":"uint256"},{"internalType":"uint256","name":"_vntPrice","type":"uint256"},{"internalType":"uint256","name":"_vnstPrice","type":"uint256"},{"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"},{"internalType":"uint256","name":"_totalSwapped","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"}],"name":"getSellVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"}],"name":"getSwapVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTreasuryBalances","outputs":[{"internalType":"uint256","name":"vntBal","type":"uint256"},{"internalType":"uint256","name":"vnstBal","type":"uint256"},{"internalType":"uint256","name":"usdtBal","type":"uint256"},{"internalType":"uint256","name":"bnbBal","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserAllowances","outputs":[{"internalType":"uint256","name":"vnt","type":"uint256"},{"internalType":"uint256","name":"vnst","type":"uint256"},{"internalType":"uint256","name":"usdt","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserTotalSwaps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNSTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"minSwapAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"},{"internalType":"uint256","name":"minUsdtOut","type":"uint256"}],"name":"sellVNT","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_vntPrice","type":"uint256"},{"internalType":"uint256","name":"_vnstPrice","type":"uint256"},{"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"}],"name":"setAllPrices","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_vnt","type":"address"},{"internalType":"address","name":"_vnst","type":"address"},{"internalType":"address","name":"_usdt","type":"address"}],"name":"setAllTreasuries","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address payable","name":"newWallet","type":"address"}],"name":"setFeeWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newMin","type":"uint256"}],"name":"setMinSwap","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setSwapFee","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setUSDTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"setVNSTPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setVNSTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"setVNTPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"setVNTToVNSTPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setVNTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"swapFeeBNB","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"},{"internalType":"uint256","name":"minVnstOut","type":"uint256"}],"name":"swapVNTToVNST","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"totalSwapped","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"usdtTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"userSwaps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"vnstPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"vnstTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"vntPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"vntToVnstPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"vntTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"stateMutability":"payable","type":"receive"}];
+// ============================================================
+// ✅ UPDATED SWAP_ABI - 11 Constructor Parameters
+// ============================================================
+const SWAP_ABI = [
+    {
+        "inputs": [
+            {"internalType":"address","name":"_vnt","type":"address"},
+            {"internalType":"address","name":"_vnst","type":"address"},
+            {"internalType":"address","name":"_usdt","type":"address"},
+            {"internalType":"address payable","name":"_feeWallet","type":"address"},
+            {"internalType":"address","name":"_vntTreasury","type":"address"},
+            {"internalType":"address","name":"_vnstTreasury","type":"address"},
+            {"internalType":"address","name":"_usdtTreasury","type":"address"},
+            {"internalType":"uint256","name":"_vntPrice","type":"uint256"},
+            {"internalType":"uint256","name":"_vnstPrice","type":"uint256"},
+            {"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"},
+            {"internalType":"uint256","name":"_swapFeeBNB","type":"uint256"}
+        ],
+        "stateMutability":"nonpayable",
+        "type":"constructor"
+    },
+    {"inputs":[],"name":"AlreadyPaused","type":"error"},
+    {"inputs":[],"name":"ContractPaused","type":"error"},
+    {"inputs":[],"name":"FeeMismatch","type":"error"},
+    {"inputs":[],"name":"InsufficientAllowance","type":"error"},
+    {"inputs":[],"name":"InsufficientBalance","type":"error"},
+    {"inputs":[],"name":"InvalidAddress","type":"error"},
+    {"inputs":[],"name":"InvalidAmount","type":"error"},
+    {"inputs":[],"name":"InvalidFee","type":"error"},
+    {"inputs":[],"name":"InvalidToken","type":"error"},
+    {"inputs":[],"name":"MinSwapNotMet","type":"error"},
+    {"inputs":[],"name":"NotOwner","type":"error"},
+    {"inputs":[],"name":"NotPaused","type":"error"},
+    {"inputs":[],"name":"ReentrancyGuard","type":"error"},
+    {"inputs":[],"name":"SlippageExceeded","type":"error"},
+    {"inputs":[],"name":"TransferFailed","type":"error"},
+    {"inputs":[],"name":"ZeroMinSwap","type":"error"},
+    {"inputs":[],"name":"ZeroPrice","type":"error"},
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":false,"internalType":"address","name":"oldWallet","type":"address"},{"indexed":false,"internalType":"address","name":"newWallet","type":"address"}],
+        "name":"FeeWalletUpdated","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":false,"internalType":"uint256","name":"oldMin","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newMin","type":"uint256"}],
+        "name":"MinSwapUpdated","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],
+        "name":"OwnershipTransferred","type":"event"
+    },
+    {"anonymous":false,"inputs":[],"name":"Paused","type":"event"},
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":false,"internalType":"string","name":"pair","type":"string"},{"indexed":false,"internalType":"uint256","name":"oldPrice","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newPrice","type":"uint256"}],
+        "name":"PriceUpdated","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"address","name":"fromToken","type":"address"},{"indexed":false,"internalType":"address","name":"toToken","type":"address"},{"indexed":false,"internalType":"uint256","name":"amountIn","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amountOut","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"minAmountOut","type":"uint256"}],
+        "name":"SwapExecuted","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":false,"internalType":"uint256","name":"oldFee","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newFee","type":"uint256"}],
+        "name":"SwapFeeUpdated","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":false,"internalType":"string","name":"treasury","type":"string"},{"indexed":false,"internalType":"address","name":"oldAddress","type":"address"},{"indexed":false,"internalType":"address","name":"newAddress","type":"address"}],
+        "name":"TreasuryUpdated","type":"event"
+    },
+    {"anonymous":false,"inputs":[],"name":"Unpaused","type":"event"},
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"usdtSpent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"vnstReceived","type":"uint256"}],
+        "name":"VNSTPurchased","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"usdtSpent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"vntReceived","type":"uint256"}],
+        "name":"VNTPurchased","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"vntSold","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"usdtReceived","type":"uint256"}],
+        "name":"VNTSold","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"vntSpent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"vnstReceived","type":"uint256"}],
+        "name":"VNTSwapped","type":"event"
+    },
+    {"stateMutability":"payable","type":"fallback"},
+    {"inputs":[],"name":"USDT","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"VNST","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"VNT","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"},{"internalType":"uint256","name":"minVnstOut","type":"uint256"}],"name":"buyVNST","outputs":[],"stateMutability":"payable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"},{"internalType":"uint256","name":"minVntOut","type":"uint256"}],"name":"buyVNT","outputs":[],"stateMutability":"payable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"emergencyWithdrawAllBNB","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"emergencyWithdrawBNB","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"feeWallet","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"getBNBBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {
+        "inputs":[],
+        "name":"getContractInfo",
+        "outputs":[
+            {"internalType":"address","name":"_owner","type":"address"},
+            {"internalType":"bool","name":"_paused","type":"bool"},
+            {"internalType":"uint256","name":"_minVNTBuy","type":"uint256"},
+            {"internalType":"uint256","name":"_minVNSTBuy","type":"uint256"},
+            {"internalType":"uint256","name":"_minVNTSwap","type":"uint256"},
+            {"internalType":"uint256","name":"_fee","type":"uint256"},
+            {"internalType":"uint256","name":"_vntPrice","type":"uint256"},
+            {"internalType":"uint256","name":"_vnstPrice","type":"uint256"},
+            {"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"},
+            {"internalType":"uint256","name":"_totalSwapped","type":"uint256"}
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"}],"name":"getSellVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"}],"name":"getSwapVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"getTreasuryBalances","outputs":[{"internalType":"uint256","name":"vntBal","type":"uint256"},{"internalType":"uint256","name":"vnstBal","type":"uint256"},{"internalType":"uint256","name":"usdtBal","type":"uint256"},{"internalType":"uint256","name":"bnbBal","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserAllowances","outputs":[{"internalType":"uint256","name":"vnt","type":"uint256"},{"internalType":"uint256","name":"vnst","type":"uint256"},{"internalType":"uint256","name":"usdt","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserTotalSwaps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNSTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"minSwapAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"},{"internalType":"uint256","name":"minUsdtOut","type":"uint256"}],"name":"sellVNT","outputs":[],"stateMutability":"payable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"_vntPrice","type":"uint256"},{"internalType":"uint256","name":"_vnstPrice","type":"uint256"},{"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"}],"name":"setAllPrices","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"_vnt","type":"address"},{"internalType":"address","name":"_vnst","type":"address"},{"internalType":"address","name":"_usdt","type":"address"}],"name":"setAllTreasuries","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address payable","name":"newWallet","type":"address"}],"name":"setFeeWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newMin","type":"uint256"}],"name":"setMinSwap","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setSwapFee","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setUSDTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"setVNSTPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setVNSTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"setVNTPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newPrice","type":"uint256"}],"name":"setVNTToVNSTPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setVNTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"swapFeeBNB","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"vntAmount","type":"uint256"},{"internalType":"uint256","name":"minVnstOut","type":"uint256"}],"name":"swapVNTToVNST","outputs":[],"stateMutability":"payable","type":"function"},
+    {"inputs":[],"name":"totalSwapped","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"usdtTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"userSwaps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"vnstPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"vnstTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"vntPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"vntToVnstPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"vntTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"stateMutability":"payable","type":"receive"}
+];
 
+// ============================================================
+// TOKEN ABI
+// ============================================================
 const TOKEN_ABI = [
     {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
     {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -32,7 +195,7 @@ const TOKEN_ABI = [
 ];
 
 // ============================================================
-// WINDOW LOAD - Main Initialization
+// WINDOW LOAD
 // ============================================================
 window.addEventListener('load', async () => {
     try {
@@ -279,18 +442,28 @@ async function initContracts() {
         
         try {
             const info = await swapContract.methods.getContractInfo().call();
+            // ✅ Updated: Now getting 10 values
+            minVNTBuyAmount = info._minVNTBuy;
+            minVNSTBuyAmount = info._minVNSTBuy;
+            minVNTSwapAmount = info._minVNTSwap;
+            minSwapAmount = info._minVNTBuy; // For backward compatibility
+            swapFeeBNB = info._fee;
             vntPrice = info._vntPrice;
             vnstPrice = info._vnstPrice;
             vntToVnstPrice = info._vntToVnstPrice;
-            minSwapAmount = info._minSwap;
-            swapFeeBNB = info._fee;
             console.log('✅ Contract info loaded successfully');
+            console.log('Min VNT Buy:', minVNTBuyAmount.toString());
+            console.log('Min VNST Buy:', minVNSTBuyAmount.toString());
+            console.log('Min VNT Swap:', minVNTSwapAmount.toString());
         } catch (err) {
             console.warn('Error getting contract info, trying individual calls:', err);
             vntPrice = await swapContract.methods.vntPrice().call();
             vnstPrice = await swapContract.methods.vnstPrice().call();
             vntToVnstPrice = await swapContract.methods.vntToVnstPrice().call();
-            minSwapAmount = await swapContract.methods.minSwapAmount().call();
+            minVNTBuyAmount = await swapContract.methods.minVNTBuyAmount().call();
+            minVNSTBuyAmount = await swapContract.methods.minVNSTBuyAmount().call();
+            minVNTSwapAmount = await swapContract.methods.minVNTSwapAmount().call();
+            minSwapAmount = minVNTBuyAmount;
             swapFeeBNB = await swapContract.methods.swapFeeBNB().call();
         }
         
@@ -305,13 +478,13 @@ async function initContracts() {
         // Update UI
         document.getElementById('vntPrice').textContent = formatUnits(vntPrice, 18) + ' USDT';
         document.getElementById('vnstPrice').textContent = formatUnits(vnstPrice, 18) + ' USDT';
-        document.getElementById('minSwapAmount').textContent = formatUnits(minSwapAmount, usdtDecimals) + ' USDT/VNT';
+        document.getElementById('minSwapAmount').textContent = formatUnits(minVNTBuyAmount, 18) + ' USDT/VNT';
         document.getElementById('swapFee').textContent = formatUnits(swapFeeBNB, 18) + ' BNB';
         document.getElementById('sellVNTPrice').textContent = formatUnits(vntPrice, 18) + ' USDT/VNT';
-        document.getElementById('sellMinSwap').textContent = formatUnits(minSwapAmount, vntDecimals) + ' VNT';
+        document.getElementById('sellMinSwap').textContent = formatUnits(minVNTBuyAmount, 18) + ' VNT';
         document.getElementById('sellFee').textContent = formatUnits(swapFeeBNB, 18) + ' BNB';
         document.getElementById('swapRate').textContent = formatUnits(vntToVnstPrice, 18) + ' VNST/VNT';
-        document.getElementById('swapMin').textContent = formatUnits(minSwapAmount, vntDecimals) + ' VNT';
+        document.getElementById('swapMin').textContent = formatUnits(minVNTSwapAmount, 18) + ' VNT';
         document.getElementById('swapFeeDisplay').textContent = formatUnits(swapFeeBNB, 18) + ' BNB';
         document.getElementById('contractAddress').textContent = config.swapContractAddress;
         
@@ -346,10 +519,10 @@ async function updateBuyQuote() {
     }
     try {
         const usdtBN = toTokenUnits(usdtAmount, usdtDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
         if (usdtBN.lt(minSwapBN)) {
             quoteResult.classList.remove('hidden');
-            quoteText.textContent = `⚠️ Min: ${formatUnits(minSwapAmount, usdtDecimals)} USDT`;
+            quoteText.textContent = `⚠️ Min: ${formatUnits(minVNTBuyAmount, 18)} USDT`;
             document.getElementById('buyVNTBtn').disabled = true;
             document.getElementById('buyVNSTBtn').disabled = true;
             return;
@@ -381,10 +554,10 @@ async function updateSellQuote() {
     }
     try {
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
         if (vntBN.lt(minSwapBN)) {
             quoteResult.classList.remove('hidden');
-            quoteText.textContent = `⚠️ Min: ${formatUnits(minSwapAmount, vntDecimals)} VNT`;
+            quoteText.textContent = `⚠️ Min: ${formatUnits(minVNTBuyAmount, 18)} VNT`;
             document.getElementById('sellVNTBtn').disabled = true;
             return;
         }
@@ -412,10 +585,10 @@ async function updateSwapQuote() {
     }
     try {
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNTSwapAmount);
         if (vntBN.lt(minSwapBN)) {
             quoteResult.classList.remove('hidden');
-            quoteText.textContent = `⚠️ Min: ${formatUnits(minSwapAmount, vntDecimals)} VNT`;
+            quoteText.textContent = `⚠️ Min: ${formatUnits(minVNTSwapAmount, 18)} VNT`;
             document.getElementById('swapVNTToVNSTBtn').disabled = true;
             return;
         }
@@ -479,9 +652,9 @@ async function buyVNT() {
             return;
         }
         const usdtBN = toTokenUnits(usdtAmount, usdtDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
         if (usdtBN.lt(minSwapBN)) {
-            showMessage(`Minimum: ${formatUnits(minSwapAmount, usdtDecimals)} USDT`, 'error');
+            showMessage(`Minimum: ${formatUnits(minVNTBuyAmount, 18)} USDT`, 'error');
             return;
         }
 
@@ -526,9 +699,9 @@ async function buyVNST() {
             return;
         }
         const usdtBN = toTokenUnits(usdtAmount, usdtDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNSTBuyAmount);
         if (usdtBN.lt(minSwapBN)) {
-            showMessage(`Minimum: ${formatUnits(minSwapAmount, usdtDecimals)} USDT`, 'error');
+            showMessage(`Minimum: ${formatUnits(minVNSTBuyAmount, 18)} USDT`, 'error');
             return;
         }
 
@@ -573,9 +746,9 @@ async function sellVNT() {
             return;
         }
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
         if (vntBN.lt(minSwapBN)) {
-            showMessage(`Minimum: ${formatUnits(minSwapAmount, vntDecimals)} VNT`, 'error');
+            showMessage(`Minimum: ${formatUnits(minVNTBuyAmount, 18)} VNT`, 'error');
             return;
         }
 
@@ -620,9 +793,9 @@ async function swapVNTToVNST() {
             return;
         }
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
-        const minSwapBN = web3.utils.toBN(minSwapAmount);
+        const minSwapBN = web3.utils.toBN(minVNTSwapAmount);
         if (vntBN.lt(minSwapBN)) {
-            showMessage(`Minimum: ${formatUnits(minSwapAmount, vntDecimals)} VNT`, 'error');
+            showMessage(`Minimum: ${formatUnits(minVNTSwapAmount, 18)} VNT`, 'error');
             return;
         }
 
@@ -673,10 +846,9 @@ function copyContractAddress() {
 }
 
 // ============================================================
-// 🔍 DEBUG FUNCTIONS - कंसोल में चलाने के लिए
+// 🔍 DEBUG FUNCTIONS
 // ============================================================
 
-// 1. Contract Status Check
 async function checkContractStatus() {
     try {
         console.log('===== 📊 CONTRACT STATUS CHECK =====');
@@ -684,19 +856,17 @@ async function checkContractStatus() {
         const isPaused = await swapContract.methods.paused().call();
         console.log('Paused:', isPaused);
         
-        const minSwap = await swapContract.methods.minSwapAmount().call();
-        console.log('Min Swap Amount:', formatUnits(minSwap, 18));
-        
-        const fee = await swapContract.methods.swapFeeBNB().call();
-        console.log('Swap Fee (BNB):', formatUnits(fee, 18));
+        console.log('Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
+        console.log('Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
+        console.log('Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
+        console.log('Swap Fee (BNB):', formatUnits(swapFeeBNB, 18));
         
         const usdtBal = await usdtToken.methods.balanceOf(currentAccount).call();
-        console.log('Your USDT Balance:', formatUnits(usdtBal, usdtDecimals));
-        
         const vntBal = await vntToken.methods.balanceOf(currentAccount).call();
-        console.log('Your VNT Balance:', formatUnits(vntBal, vntDecimals));
-        
         const vnstBal = await vnstToken.methods.balanceOf(currentAccount).call();
+        
+        console.log('Your USDT Balance:', formatUnits(usdtBal, usdtDecimals));
+        console.log('Your VNT Balance:', formatUnits(vntBal, vntDecimals));
         console.log('Your VNST Balance:', formatUnits(vnstBal, vnstDecimals));
         
         const vntTreasury = await swapContract.methods.vntTreasury().call();
@@ -711,30 +881,28 @@ async function checkContractStatus() {
         console.log('VNST Treasury Balance:', formatUnits(vnstTreasuryBal, vnstDecimals));
         console.log('USDT Treasury Balance:', formatUnits(usdtTreasuryBal, usdtDecimals));
         
-        const vntPrice = await swapContract.methods.vntPrice().call();
-        const vnstPrice = await swapContract.methods.vnstPrice().call();
-        const vntToVnstPrice = await swapContract.methods.vntToVnstPrice().call();
         console.log('VNT Price:', formatUnits(vntPrice, 18));
         console.log('VNST Price:', formatUnits(vnstPrice, 18));
         console.log('VNT→VNST Price:', formatUnits(vntToVnstPrice, 18));
         
         console.log('===== END CHECK =====');
         
-        // Summary for user
         let msg = `📊 Balances:\n`;
         msg += `USDT: ${formatUnits(usdtBal, usdtDecimals)}\n`;
         msg += `VNT: ${formatUnits(vntBal, vntDecimals)}\n`;
         msg += `VNST: ${formatUnits(vnstBal, vnstDecimals)}\n`;
-        msg += `Min Swap: ${formatUnits(minSwap, 18)}\n`;
-        msg += `Fee: ${formatUnits(fee, 18)} BNB`;
+        msg += `Min VNT Buy: ${formatUnits(minVNTBuyAmount, 18)}\n`;
+        msg += `Fee: ${formatUnits(swapFeeBNB, 18)} BNB`;
         showMessage(msg, 'status');
         
         return {
             usdtBalance: usdtBal,
             vntBalance: vntBal,
             vnstBalance: vnstBal,
-            minSwap: minSwap,
-            fee: fee,
+            minVNTBuy: minVNTBuyAmount,
+            minVNSTBuy: minVNSTBuyAmount,
+            minVNTSwap: minVNTSwapAmount,
+            fee: swapFeeBNB,
             paused: isPaused,
             vntTreasury: vntTreasuryBal,
             vnstTreasury: vnstTreasuryBal,
@@ -746,11 +914,9 @@ async function checkContractStatus() {
     }
 }
 
-// 2. Detailed Debug - सब कुछ चेक करेगा
 async function detailedDebug() {
     try {
         console.log('===== 🔍 DETAILED DEBUG START =====');
-        
         console.log('Account:', currentAccount);
         console.log('Contract:', CONFIG.testnet.swapContractAddress);
         
@@ -766,13 +932,12 @@ async function detailedDebug() {
         console.log('  BNB:', formatUnits(bnbBal, 18));
         
         const paused = await swapContract.methods.paused().call();
-        const minSwap = await swapContract.methods.minSwapAmount().call();
-        const fee = await swapContract.methods.swapFeeBNB().call();
-        
         console.log('📋 CONTRACT INFO:');
         console.log('  Paused:', paused);
-        console.log('  Min Swap:', formatUnits(minSwap, 18));
-        console.log('  Fee (BNB):', formatUnits(fee, 18));
+        console.log('  Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
+        console.log('  Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
+        console.log('  Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
+        console.log('  Fee (BNB):', formatUnits(swapFeeBNB, 18));
         
         const vntTreasury = await swapContract.methods.vntTreasury().call();
         const vnstTreasury = await swapContract.methods.vnstTreasury().call();
@@ -794,7 +959,6 @@ async function detailedDebug() {
         console.log('  USDT Allowance:', formatUnits(usdtAllowance, usdtDecimals));
         console.log('  VNT Allowance:', formatUnits(vntAllowance, vntDecimals));
         
-        // Test with 1 USDT
         const testAmount = '1';
         const testBN = toTokenUnits(testAmount, usdtDecimals);
         console.log('\n🧪 TEST: Buy VNST with 1 USDT');
@@ -802,7 +966,7 @@ async function detailedDebug() {
         let canBuy = true;
         const checks = [];
         
-        if (web3.utils.toBN(testBN).lt(web3.utils.toBN(minSwap))) {
+        if (web3.utils.toBN(testBN).lt(web3.utils.toBN(minVNSTBuyAmount))) {
             checks.push('❌ Amount less than min swap');
             canBuy = false;
         } else {
@@ -823,8 +987,8 @@ async function detailedDebug() {
             checks.push('✅ USDT allowance sufficient');
         }
         
-        if (web3.utils.toBN(bnbBal).lt(web3.utils.toBN(fee))) {
-            checks.push(`❌ Insufficient BNB (need ${formatUnits(fee, 18)})`);
+        if (web3.utils.toBN(bnbBal).lt(web3.utils.toBN(swapFeeBNB))) {
+            checks.push(`❌ Insufficient BNB (need ${formatUnits(swapFeeBNB, 18)})`);
             canBuy = false;
         } else {
             checks.push('✅ BNB balance sufficient');
@@ -832,7 +996,7 @@ async function detailedDebug() {
         
         const vnstQuote = await swapContract.methods.getVNSTQuote(testBN.toString()).call();
         if (web3.utils.toBN(vnstTreasuryBal).lt(web3.utils.toBN(vnstQuote))) {
-            checks.push(`❌ Insufficient VNST in treasury`);
+            checks.push('❌ Insufficient VNST in treasury');
             canBuy = false;
         } else {
             checks.push('✅ VNST treasury sufficient');
@@ -850,26 +1014,21 @@ async function detailedDebug() {
         
         if (canBuy) {
             console.log('\n✅ ALL CHECKS PASSED!');
-            console.log('📝 Try: Enter 1 in USDT amount, then click Buy VNST');
         } else {
             console.log('\n❌ SOME CHECKS FAILED!');
-            console.log('🔧 Fix the issues above.');
         }
         
         console.log('===== 🔍 DETAILED DEBUG END =====');
-        
         return { canBuy, checks, usdtAllowance, vntAllowance };
-        
     } catch (error) {
         console.error('Debug error:', error);
     }
 }
 
-// 3. Approve USDT
 async function approveUSDT() {
     try {
         console.log('🔄 Approving USDT...');
-        const amount = web3.utils.toBN(100).mul(web3.utils.toBN(10).pow(web3.utils.toBN(6))); // 100 USDT
+        const amount = web3.utils.toBN(100).mul(web3.utils.toBN(10).pow(web3.utils.toBN(6)));
         await usdtToken.methods.approve(
             CONFIG.testnet.swapContractAddress,
             amount.toString()
@@ -880,8 +1039,6 @@ async function approveUSDT() {
         });
         console.log('✅ USDT Approved!');
         showMessage('✅ USDT approved successfully!', 'success');
-        
-        // Check allowance
         const allowance = await usdtToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
         console.log('New USDT Allowance:', formatUnits(allowance, usdtDecimals));
     } catch (error) {
@@ -890,11 +1047,10 @@ async function approveUSDT() {
     }
 }
 
-// 4. Approve VNT
 async function approveVNT() {
     try {
         console.log('🔄 Approving VNT...');
-        const amount = web3.utils.toBN(1000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(18))); // 1000 VNT
+        const amount = web3.utils.toBN(1000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(18)));
         await vntToken.methods.approve(
             CONFIG.testnet.swapContractAddress,
             amount.toString()
@@ -905,7 +1061,6 @@ async function approveVNT() {
         });
         console.log('✅ VNT Approved!');
         showMessage('✅ VNT approved successfully!', 'success');
-        
         const allowance = await vntToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
         console.log('New VNT Allowance:', formatUnits(allowance, vntDecimals));
     } catch (error) {
@@ -914,7 +1069,6 @@ async function approveVNT() {
     }
 }
 
-// 5. Check Allowances
 async function checkAllowances() {
     try {
         console.log('===== 🔓 CHECKING ALLOWANCES =====');
@@ -950,7 +1104,6 @@ async function checkAllowances() {
     }
 }
 
-// 6. Test Buy VNST with 1 USDT
 async function testBuyVNST() {
     try {
         console.log('🧪 Testing Buy VNST with 1 USDT...');
@@ -958,7 +1111,6 @@ async function testBuyVNST() {
         const usdtAmount = '1';
         const usdtBN = toTokenUnits(usdtAmount, usdtDecimals);
         
-        // Check allowance
         const allowance = await usdtToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
         if (web3.utils.toBN(allowance).lt(web3.utils.toBN(usdtBN))) {
             console.log('❌ Need to approve USDT first. Run: approveUSDT()');
@@ -982,19 +1134,16 @@ async function testBuyVNST() {
         console.log('✅ Success! Transaction:', result.transactionHash);
         showMessage('✅ Test Buy VNST successful!', 'success');
         await updateWalletInfo();
-        
     } catch (error) {
         console.error('Test Buy VNST failed:', error);
         showMessage('❌ Test failed: ' + error.message, 'error');
     }
 }
 
-// 7. Complete Fix - सब कुछ एक साथ
 async function completeFix() {
     try {
         console.log('🔄 Starting complete fix...');
         
-        // 1. USDT Approve
         console.log('1️⃣ Approving USDT...');
         const usdtAmount = web3.utils.toBN(100).mul(web3.utils.toBN(10).pow(web3.utils.toBN(6)));
         await usdtToken.methods.approve(
@@ -1007,7 +1156,6 @@ async function completeFix() {
         });
         console.log('✅ USDT approved');
         
-        // 2. VNT Approve
         console.log('2️⃣ Approving VNT...');
         const vntAmount = web3.utils.toBN(1000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(18)));
         await vntToken.methods.approve(
@@ -1021,17 +1169,8 @@ async function completeFix() {
         console.log('✅ VNT approved');
         
         console.log('✅ Complete fix done!');
-        console.log('Now try:');
-        console.log('  - Buy VNST with 1 USDT');
-        console.log('  - Buy VNT with 1 USDT');
-        console.log('  - Sell VNT with 1 VNT');
-        console.log('  - Swap VNT→VNST with 1 VNT');
-        
         showMessage('✅ All approvals done! Now try swapping.', 'success');
-        
-        // Run debug again
         await detailedDebug();
-        
     } catch (error) {
         console.error('Fix error:', error);
         showMessage('Error: ' + error.message, 'error');
