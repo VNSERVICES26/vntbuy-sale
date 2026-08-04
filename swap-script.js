@@ -823,10 +823,6 @@ async function swapVNTToVNST() {
     }
 }
 
-// ============================================================
-// 🔍 DEBUG FUNCTIONS
-// ============================================================
-
 async function checkContractStatus() {
     try {
         console.log('===== 📊 CONTRACT STATUS CHECK =====');
@@ -837,7 +833,6 @@ async function checkContractStatus() {
         console.log('Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
         console.log('Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
         console.log('Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
-        console.log('Swap Fee (BNB):', formatUnits(swapFeeBNB, 18));
         
         const usdtBal = await usdtToken.methods.balanceOf(currentAccount).call();
         const vntBal = await vntToken.methods.balanceOf(currentAccount).call();
@@ -869,8 +864,8 @@ async function checkContractStatus() {
         msg += `USDT: ${formatUnits(usdtBal, usdtDecimals)}\n`;
         msg += `VNT: ${formatUnits(vntBal, vntDecimals)}\n`;
         msg += `VNST: ${formatUnits(vnstBal, vnstDecimals)}\n`;
-        msg += `Min VNT Buy: ${formatUnits(minVNTBuyAmount, 18)}\n`;
-        msg += `Fee: ${formatUnits(swapFeeBNB, 18)} BNB`;
+        msg += `Min VNT Buy: ${formatUnits(minVNTBuyAmount, 18)}`;
+        
         showMessage(msg, 'status');
         
         return {
@@ -880,7 +875,6 @@ async function checkContractStatus() {
             minVNTBuy: minVNTBuyAmount,
             minVNSTBuy: minVNSTBuyAmount,
             minVNTSwap: minVNTSwapAmount,
-            fee: swapFeeBNB,
             paused: isPaused,
             vntTreasury: vntTreasuryBal,
             vnstTreasury: vnstTreasuryBal,
@@ -915,7 +909,7 @@ async function detailedDebug() {
         console.log('  Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
         console.log('  Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
         console.log('  Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
-        console.log('  Fee (BNB):', formatUnits(swapFeeBNB, 18));
+        // ✅ Fee display REMOVED from here
         
         const vntTreasury = await swapContract.methods.vntTreasury().call();
         const vnstTreasury = await swapContract.methods.vnstTreasury().call();
