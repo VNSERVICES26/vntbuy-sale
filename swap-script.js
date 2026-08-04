@@ -249,8 +249,7 @@ async function setupEventListeners() {
     document.getElementById('buyVNTBtn').addEventListener('click', () => buyVNT());
     document.getElementById('buyVNSTBtn').addEventListener('click', () => buyVNST());
     document.getElementById('sellVNTBtn').addEventListener('click', () => sellVNT());
-    document.getElementById('swapVNTToVNSTBtn').addEventListener('click', () => swapVNTToVNST());
-    document.getElementById('copyContractBtn').addEventListener('click', copyContractAddress);
+    document.getElementById('swapVNTToVNSTBtn').addEventListener('click', () => swapVNTToVNST()); 
 }
 
 function setupInputListeners() {
@@ -479,14 +478,10 @@ async function initContracts() {
         document.getElementById('vntPrice').textContent = formatUnits(vntPrice, 18) + ' USDT';
         document.getElementById('vnstPrice').textContent = formatUnits(vnstPrice, 18) + ' USDT';
         document.getElementById('minSwapAmount').textContent = formatUnits(minVNTBuyAmount, 18) + ' USDT/VNT';
-        document.getElementById('swapFee').textContent = formatUnits(swapFeeBNB, 18) + ' BNB';
         document.getElementById('sellVNTPrice').textContent = formatUnits(vntPrice, 18) + ' USDT/VNT';
         document.getElementById('sellMinSwap').textContent = formatUnits(minVNTBuyAmount, 18) + ' VNT';
-        document.getElementById('sellFee').textContent = formatUnits(swapFeeBNB, 18) + ' BNB';
         document.getElementById('swapRate').textContent = formatUnits(vntToVnstPrice, 18) + ' VNST/VNT';
         document.getElementById('swapMin').textContent = formatUnits(minVNTSwapAmount, 18) + ' VNT';
-        document.getElementById('swapFeeDisplay').textContent = formatUnits(swapFeeBNB, 18) + ' BNB';
-        document.getElementById('contractAddress').textContent = config.swapContractAddress;
         
         contractInitialized = true;
         if (currentAccount) {
@@ -825,23 +820,6 @@ async function swapVNTToVNST() {
         } else {
             showMessage(`Failed: ${error.message}`, 'error');
         }
-    }
-}
-
-function copyContractAddress() {
-    const address = document.getElementById('contractAddress').textContent;
-    if (address && address !== 'Loading...') {
-        navigator.clipboard.writeText(address).then(() => {
-            showMessage('Contract address copied!', 'success');
-        }).catch(() => {
-            const textArea = document.createElement('textarea');
-            textArea.value = address;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showMessage('Contract address copied!', 'success');
-        });
     }
 }
 
