@@ -1,6 +1,6 @@
 const CONFIG = {
     testnet: {
-        swapContractAddress: "0xBb9454FAB6C873e9c89A92Faa2Eb163f83Bb0a7e",
+        swapContractAddress: "0xFce9c03F5C0a38d29677aE8a84a58A38aFB1a737",
         vntTokenAddress: "0x7917B8A03EAEd57802DAc9cEd9E4A42477DB004c",
         vnstTokenAddress: "0x05eebbDa5a53B8358eb31dBB8Fb59EaCd1e43C61",
         usdtTokenAddress: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
@@ -15,6 +15,7 @@ let web3, swapContract, vntToken, vnstToken, usdtToken;
 let currentAccount = null;
 let vntDecimals = 18, vnstDecimals = 18, usdtDecimals = 18;
 let minVNTBuyAmount = 0, minVNSTBuyAmount = 0, minVNTSwapAmount = 0;
+let maxVNTBuyAmount = 0;  // ✅ NEW: Max VNT Buy amount
 let minSwapAmount = 0, swapFeeBNB = 0, vntPrice = 0, vnstPrice = 0, vntToVnstPrice = 0;
 let contractInitialized = false;
 
@@ -23,7 +24,7 @@ const GAS_LIMIT = 500000;
 const GAS_PRICE = '5000000000';
 
 // ============================================================
-// ✅ UPDATED SWAP_ABI - 11 Constructor Parameters
+// ✅ UPDATED SWAP_ABI - With MaxVNTBuy
 // ============================================================
 const SWAP_ABI = [
     {
@@ -44,6 +45,7 @@ const SWAP_ABI = [
         "type":"constructor"
     },
     {"inputs":[],"name":"AlreadyPaused","type":"error"},
+    {"inputs":[],"name":"AmountTooSmall","type":"error"},  // ✅ NEW
     {"inputs":[],"name":"ContractPaused","type":"error"},
     {"inputs":[],"name":"FeeMismatch","type":"error"},
     {"inputs":[],"name":"InsufficientAllowance","type":"error"},
@@ -64,6 +66,11 @@ const SWAP_ABI = [
         "anonymous":false,
         "inputs":[{"indexed":false,"internalType":"address","name":"oldWallet","type":"address"},{"indexed":false,"internalType":"address","name":"newWallet","type":"address"}],
         "name":"FeeWalletUpdated","type":"event"
+    },
+    {
+        "anonymous":false,
+        "inputs":[{"indexed":false,"internalType":"uint256","name":"oldMax","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newMax","type":"uint256"}],
+        "name":"MaxSwapUpdated","type":"event"  // ✅ NEW
     },
     {
         "anonymous":false,
@@ -135,6 +142,7 @@ const SWAP_ABI = [
             {"internalType":"address","name":"_owner","type":"address"},
             {"internalType":"bool","name":"_paused","type":"bool"},
             {"internalType":"uint256","name":"_minVNTBuy","type":"uint256"},
+            {"internalType":"uint256","name":"_maxVNTBuy","type":"uint256"},  // ✅ NEW
             {"internalType":"uint256","name":"_minVNSTBuy","type":"uint256"},
             {"internalType":"uint256","name":"_minVNTSwap","type":"uint256"},
             {"internalType":"uint256","name":"_fee","type":"uint256"},
@@ -153,6 +161,7 @@ const SWAP_ABI = [
     {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserTotalSwaps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNSTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"maxVNTBuyAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},  // ✅ NEW
     {"inputs":[],"name":"minSwapAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -161,6 +170,7 @@ const SWAP_ABI = [
     {"inputs":[{"internalType":"uint256","name":"_vntPrice","type":"uint256"},{"internalType":"uint256","name":"_vnstPrice","type":"uint256"},{"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"}],"name":"setAllPrices","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address","name":"_vnt","type":"address"},{"internalType":"address","name":"_vnst","type":"address"},{"internalType":"address","name":"_usdt","type":"address"}],"name":"setAllTreasuries","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address payable","name":"newWallet","type":"address"}],"name":"setFeeWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newMax","type":"uint256"}],"name":"setMaxVNTBuy","outputs":[],"stateMutability":"nonpayable","type":"function"},  // ✅ NEW
     {"inputs":[{"internalType":"uint256","name":"newMin","type":"uint256"}],"name":"setMinSwap","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setSwapFee","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setUSDTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -441,8 +451,9 @@ async function initContracts() {
         
         try {
             const info = await swapContract.methods.getContractInfo().call();
-            // ✅ Updated: Now getting 10 values
+            // ✅ Updated: Now getting 11 values (including maxVNTBuy)
             minVNTBuyAmount = info._minVNTBuy;
+            maxVNTBuyAmount = info._maxVNTBuy;  // ✅ NEW
             minVNSTBuyAmount = info._minVNSTBuy;
             minVNTSwapAmount = info._minVNTSwap;
             minSwapAmount = info._minVNTBuy; // For backward compatibility
@@ -452,6 +463,7 @@ async function initContracts() {
             vntToVnstPrice = info._vntToVnstPrice;
             console.log('✅ Contract info loaded successfully');
             console.log('Min VNT Buy:', minVNTBuyAmount.toString());
+            console.log('Max VNT Buy:', maxVNTBuyAmount.toString());  // ✅ NEW
             console.log('Min VNST Buy:', minVNSTBuyAmount.toString());
             console.log('Min VNT Swap:', minVNTSwapAmount.toString());
         } catch (err) {
@@ -460,6 +472,7 @@ async function initContracts() {
             vnstPrice = await swapContract.methods.vnstPrice().call();
             vntToVnstPrice = await swapContract.methods.vntToVnstPrice().call();
             minVNTBuyAmount = await swapContract.methods.minVNTBuyAmount().call();
+            maxVNTBuyAmount = await swapContract.methods.maxVNTBuyAmount().call();  // ✅ NEW
             minVNSTBuyAmount = await swapContract.methods.minVNSTBuyAmount().call();
             minVNTSwapAmount = await swapContract.methods.minVNTSwapAmount().call();
             minSwapAmount = minVNTBuyAmount;
@@ -474,7 +487,7 @@ async function initContracts() {
             console.warn('Error getting decimals, using defaults:', err);
         }
         
-        // Update UI
+        // Update UI - ✅ REMOVED Fee display
         document.getElementById('vntPrice').textContent = formatUnits(vntPrice, 18) + ' USDT';
         document.getElementById('vnstPrice').textContent = formatUnits(vnstPrice, 18) + ' USDT';
         document.getElementById('minSwapAmount').textContent = formatUnits(minVNTBuyAmount, 18) + ' USDT/VNT';
@@ -550,12 +563,22 @@ async function updateSellQuote() {
     try {
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
         const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
+        const maxSwapBN = web3.utils.toBN(maxVNTBuyAmount);  // ✅ NEW
+        
         if (vntBN.lt(minSwapBN)) {
             quoteResult.classList.remove('hidden');
             quoteText.textContent = `⚠️ Min: ${formatUnits(minVNTBuyAmount, 18)} VNT`;
             document.getElementById('sellVNTBtn').disabled = true;
             return;
         }
+        
+        if (vntBN.gt(maxSwapBN)) {  // ✅ NEW - Max check
+            quoteResult.classList.remove('hidden');
+            quoteText.textContent = `⚠️ Max: ${formatUnits(maxVNTBuyAmount, 18)} VNT`;
+            document.getElementById('sellVNTBtn').disabled = true;
+            return;
+        }
+        
         const usdtOut = await swapContract.methods.getSellVNTQuote(vntBN.toString()).call();
         quoteResult.classList.remove('hidden');
         quoteText.textContent = `You will receive: ${formatUnits(usdtOut, usdtDecimals)} USDT`;
@@ -742,8 +765,15 @@ async function sellVNT() {
         }
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
         const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
+        const maxSwapBN = web3.utils.toBN(maxVNTBuyAmount);  // ✅ NEW
+        
         if (vntBN.lt(minSwapBN)) {
             showMessage(`Minimum: ${formatUnits(minVNTBuyAmount, 18)} VNT`, 'error');
+            return;
+        }
+        
+        if (vntBN.gt(maxSwapBN)) {  // ✅ NEW - Max check
+            showMessage(`Maximum: ${formatUnits(maxVNTBuyAmount, 18)} VNT`, 'error');
             return;
         }
 
@@ -823,6 +853,9 @@ async function swapVNTToVNST() {
     }
 }
 
+// ============================================================
+// DEBUG FUNCTIONS
+// ============================================================
 async function checkContractStatus() {
     try {
         console.log('===== 📊 CONTRACT STATUS CHECK =====');
@@ -831,6 +864,7 @@ async function checkContractStatus() {
         console.log('Paused:', isPaused);
         
         console.log('Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
+        console.log('Max VNT Buy:', formatUnits(maxVNTBuyAmount, 18));  // ✅ NEW
         console.log('Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
         console.log('Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
         
@@ -864,7 +898,8 @@ async function checkContractStatus() {
         msg += `USDT: ${formatUnits(usdtBal, usdtDecimals)}\n`;
         msg += `VNT: ${formatUnits(vntBal, vntDecimals)}\n`;
         msg += `VNST: ${formatUnits(vnstBal, vnstDecimals)}\n`;
-        msg += `Min VNT Buy: ${formatUnits(minVNTBuyAmount, 18)}`;
+        msg += `Min VNT Buy: ${formatUnits(minVNTBuyAmount, 18)}\n`;
+        msg += `Max VNT Buy: ${formatUnits(maxVNTBuyAmount, 18)}`;  // ✅ NEW
         
         showMessage(msg, 'status');
         
@@ -873,6 +908,7 @@ async function checkContractStatus() {
             vntBalance: vntBal,
             vnstBalance: vnstBal,
             minVNTBuy: minVNTBuyAmount,
+            maxVNTBuy: maxVNTBuyAmount,  // ✅ NEW
             minVNSTBuy: minVNSTBuyAmount,
             minVNTSwap: minVNTSwapAmount,
             paused: isPaused,
@@ -907,9 +943,9 @@ async function detailedDebug() {
         console.log('📋 CONTRACT INFO:');
         console.log('  Paused:', paused);
         console.log('  Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
+        console.log('  Max VNT Buy:', formatUnits(maxVNTBuyAmount, 18));  // ✅ NEW
         console.log('  Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
         console.log('  Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
-        // ✅ Fee display REMOVED from here
         
         const vntTreasury = await swapContract.methods.vntTreasury().call();
         const vnstTreasury = await swapContract.methods.vnstTreasury().call();
