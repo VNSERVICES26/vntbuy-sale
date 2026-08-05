@@ -493,6 +493,7 @@ async function initContracts() {
         document.getElementById('minSwapAmount').textContent = formatUnits(minVNTBuyAmount, 18) + ' USDT/VNT';
         document.getElementById('sellVNTPrice').textContent = formatUnits(vntPrice, 18) + ' USDT/VNT';
         document.getElementById('sellMinSwap').textContent = formatUnits(minVNTBuyAmount, 18) + ' VNT';
+        document.getElementById('sellMaxSwap').textContent = formatUnits(maxVNTBuyAmount, 18) + ' VNT';
         document.getElementById('swapRate').textContent = formatUnits(vntToVnstPrice, 18) + ' VNST/VNT';
         document.getElementById('swapMin').textContent = formatUnits(minVNTSwapAmount, 18) + ' VNT';
         
