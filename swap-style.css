@@ -1,0 +1,1250 @@
+/* ============================================================
+   VIRSENSWAP - SWAP PAGE STYLES v2.0
+   Premium Design System for VirsenSwap
+   ============================================================ */
+
+/* ----- RESET & BASE ----- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Backgrounds */
+    --bg-primary: #050816;
+    --bg-secondary: #0B1120;
+    --bg-glass: rgba(18, 26, 45, 0.65);
+    --bg-card: rgba(18, 26, 45, 0.80);
+    
+    /* Colors */
+    --gold: #F4C542;
+    --gold-dark: #d4a830;
+    --cyan: #00B8FF;
+    --cyan-dark: #0090d0;
+    --green: #3DFF8A;
+    --green-dark: #2dcc7a;
+    --silver: #D8E3F0;
+    --white: #F8FBFF;
+    --text-secondary: #A9B8CC;
+    --muted: #6B7A8F;
+    
+    /* Border */
+    --border-normal: rgba(0, 184, 255, 0.15);
+    --border-cyan: rgba(0, 184, 255, 0.30);
+    --border-gold: rgba(244, 197, 66, 0.20);
+    --border-green: rgba(61, 255, 138, 0.20);
+    
+    /* Shadows */
+    --shadow-blue: 0 20px 60px rgba(0, 184, 255, 0.12);
+    --shadow-gold: 0 20px 60px rgba(244, 197, 66, 0.10);
+    --shadow-green: 0 20px 60px rgba(61, 255, 138, 0.10);
+    --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.40);
+    
+    /* Radius */
+    --radius-btn: 50px;
+    --radius-card: 20px;
+    --radius-input: 14px;
+    --radius-sm: 10px;
+    
+    /* Transitions */
+    --transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ----- SCROLLBAR ----- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 10px; }
+
+/* ----- BASE ----- */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--white);
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 999;
+    background: rgba(5, 8, 22, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 184, 255, 0.06);
+    padding: 14px 0;
+    transition: var(--transition);
+}
+
+.navbar.scrolled {
+    padding: 10px 0;
+    background: rgba(5, 8, 22, 0.96);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    transition: var(--transition);
+}
+
+.logo:hover {
+    transform: scale(1.03);
+}
+
+.logo img {
+    height: 36px;
+    width: auto;
+}
+
+.logo-text {
+    background: linear-gradient(135deg, var(--gold), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Nav Links */
+.nav-links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    align-items: center;
+}
+
+.nav-links a {
+    color: var(--text-secondary);
+    transition: var(--transition);
+    position: relative;
+    padding: 4px 0;
+}
+
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--cyan);
+    transition: var(--transition);
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--white);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+    width: 100%;
+}
+
+.nav-links a.active {
+    color: var(--gold);
+}
+
+.nav-links a.active::after {
+    background: var(--gold);
+}
+
+/* Nav Connect Button */
+.nav-connect-btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark)) !important;
+    color: var(--bg-primary) !important;
+    padding: 8px 22px !important;
+    border-radius: var(--radius-btn) !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    border: none !important;
+    transition: var(--transition) !important;
+    cursor: pointer;
+}
+
+.nav-connect-btn:hover {
+    transform: scale(1.05) !important;
+    box-shadow: var(--shadow-gold) !important;
+}
+
+.nav-connect-btn::after {
+    display: none !important;
+}
+
+/* Hamburger */
+.hamburger {
+    display: none;
+    font-size: 1.6rem;
+    color: var(--white);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+}
+
+/* ============================================================
+   HEADER / PAGE HEADER
+   ============================================================ */
+.page-header {
+    padding-top: 100px;
+    padding-bottom: 30px;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    background: linear-gradient(135deg, var(--gold), var(--cyan), var(--silver));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.page-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+/* ============================================================
+   WALLET INFO
+   ============================================================ */
+#walletInfo {
+    background: var(--bg-glass);
+    border-radius: var(--radius-card);
+    padding: 20px 28px;
+    border: 1px solid var(--border-normal);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    margin: 16px auto 24px;
+    max-width: 700px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    transition: var(--transition);
+}
+
+#walletInfo.hidden {
+    display: none;
+}
+
+#walletInfo p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#walletInfo p span {
+    color: var(--white);
+    font-weight: 500;
+}
+
+#walletInfo .wallet-status {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--green);
+    padding-top: 6px;
+    border-top: 1px solid rgba(61, 255, 138, 0.10);
+}
+
+/* ============================================================
+   CONNECT BUTTON (Header)
+   ============================================================ */
+#connectWalletBtn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--bg-primary);
+    padding: 12px 32px;
+    border-radius: var(--radius-btn);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Inter', sans-serif;
+}
+
+#connectWalletBtn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-gold);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-btn);
+    padding: 6px;
+    max-width: 420px;
+    margin: 0 auto 30px;
+    border: 1px solid var(--border-normal);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 10px 20px;
+    border-radius: var(--radius-btn);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Inter', sans-serif;
+}
+
+.tab-button:hover {
+    color: var(--white);
+}
+
+.tab-button.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--bg-primary);
+    box-shadow: var(--shadow-gold);
+}
+
+/* ============================================================
+   INFO CARDS
+   ============================================================ */
+.info-card {
+    background: var(--bg-glass);
+    border-radius: var(--radius-card);
+    padding: 20px 26px;
+    border: 1px solid var(--border-normal);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px 20px;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+.info-value.gold {
+    color: var(--gold);
+}
+.info-value.cyan {
+    color: var(--cyan);
+}
+.info-value.green {
+    color: var(--green);
+}
+
+/* ============================================================
+   SWAP CONTAINER
+   ============================================================ */
+.swap-container {
+    background: var(--bg-glass);
+    border-radius: var(--radius-card);
+    padding: 32px 28px;
+    border: 1px solid var(--border-normal);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    max-width: 560px;
+    margin: 0 auto;
+    transition: var(--transition);
+}
+
+.swap-container:hover {
+    border-color: var(--border-cyan);
+}
+
+/* ============================================================
+   SWAP FORM
+   ============================================================ */
+.swap-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: var(--radius-input);
+    background: rgba(0, 0, 0, 0.30);
+    border: 1px solid var(--border-normal);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    transition: var(--transition);
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 4px rgba(0, 184, 255, 0.06);
+}
+
+.input-group input::placeholder {
+    color: var(--muted);
+}
+
+.input-group input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   ACTION BUTTONS
+   ============================================================ */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-buttons button {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 24px;
+    border-radius: var(--radius-btn);
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Gold Button */
+.gold-btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--bg-primary);
+}
+
+.gold-btn:hover:not(:disabled) {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-gold);
+}
+
+/* Cyan Button */
+.cyan-btn {
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-dark));
+    color: var(--white);
+}
+
+.cyan-btn:hover:not(:disabled) {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-blue);
+}
+
+/* Green Button */
+.green-btn {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: var(--bg-primary);
+}
+
+.green-btn:hover:not(:disabled) {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-green);
+}
+
+/* Button Disabled */
+.action-buttons button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Small Button */
+.gold-btn.small {
+    padding: 8px 18px;
+    font-size: 0.8rem;
+}
+
+/* ============================================================
+   QUOTE RESULTS
+   ============================================================ */
+.quote-result {
+    background: rgba(0, 184, 255, 0.04);
+    border-radius: var(--radius-sm);
+    padding: 14px 20px;
+    border: 1px solid var(--border-normal);
+    text-align: center;
+    transition: var(--transition);
+}
+
+.quote-result.hidden {
+    display: none;
+}
+
+.quote-result p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.quote-result p strong {
+    color: var(--gold);
+}
+
+/* ============================================================
+   CONTRACT INFO
+   ============================================================ */
+.contract-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+    padding: 16px 24px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-normal);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.contract-info p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    word-break: break-all;
+}
+
+.contract-info p span {
+    color: var(--white);
+    font-weight: 500;
+}
+
+/* ============================================================
+   STATUS MESSAGES
+   ============================================================ */
+#statusMessages {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#statusMessages div {
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.status-message {
+    background: rgba(0, 184, 255, 0.06);
+    border: 1px solid var(--border-cyan);
+    color: var(--cyan);
+}
+
+.success-message {
+    background: rgba(61, 255, 138, 0.06);
+    border: 1px solid var(--border-green);
+    color: var(--green);
+}
+
+.error-message {
+    background: rgba(255, 70, 70, 0.06);
+    border: 1px solid rgba(255, 70, 70, 0.20);
+    color: #ff6b6b;
+}
+
+/* ============================================================
+   TAB CONTENT
+   ============================================================ */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .info-card {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    #walletInfo {
+        grid-template-columns: 1fr 1fr;
+        padding: 16px 20px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+    /* Navbar */
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        background: var(--bg-secondary);
+        padding: 20px 24px;
+        border-radius: var(--radius-card);
+        position: absolute;
+        top: 64px;
+        right: 16px;
+        width: 200px;
+        gap: 12px;
+        border: 1px solid var(--border-normal);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .nav-links.open {
+        display: flex;
+    }
+    
+    .hamburger {
+        display: block;
+    }
+    
+    .nav-connect-btn {
+        width: 100%;
+        text-align: center;
+        padding: 10px !important;
+    }
+    
+    /* Header */
+    .page-header {
+        padding-top: 80px;
+    }
+    
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    /* Wallet Info */
+    #walletInfo {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 14px 18px;
+    }
+    
+    #walletInfo p {
+        font-size: 0.8rem;
+    }
+    
+    /* Tabs */
+    .tabs {
+        max-width: 100%;
+        margin: 0 0 20px;
+        border-radius: var(--radius-sm);
+        padding: 4px;
+        overflow-x: auto;
+        gap: 4px;
+    }
+    
+    .tab-button {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+    
+    /* Swap Container */
+    .swap-container {
+        padding: 20px 16px;
+        border-radius: var(--radius-sm);
+    }
+    
+    .info-card {
+        grid-template-columns: 1fr 1fr;
+        padding: 14px 18px;
+        gap: 8px 16px;
+    }
+    
+    .info-value {
+        font-size: 0.9rem;
+    }
+    
+    /* Buttons */
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons button {
+        flex: unset;
+        width: 100%;
+        padding: 12px;
+    }
+    
+    /* Contract Info */
+    .contract-info {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px 16px;
+    }
+    
+    .contract-info p {
+        font-size: 0.75rem;
+        word-break: break-all;
+    }
+    
+    #connectWalletBtn {
+        padding: 10px 20px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 420px) {
+    .container {
+        padding: 0 14px;
+    }
+    
+    .info-card {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .swap-container {
+        padding: 16px 12px;
+    }
+    
+    .input-group input {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+    
+    #walletInfo {
+        padding: 12px 14px;
+    }
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+
+.gap-8 { gap: 8px; }
+.gap-16 { gap: 16px; }
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================================
+   LOADING STATE
+   ============================================================ */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: 10px;
+    border: 2px solid var(--border-normal);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   TRANSACTION STATUS
+   ============================================================ */
+.tx-pending {
+    color: var(--gold);
+}
+
+.tx-success {
+    color: var(--green);
+}
+
+.tx-failed {
+    color: #ff6b6b;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+    background: var(--bg-primary);
+    padding: 40px 0 24px;
+    border-top: 1px solid rgba(0, 184, 255, 0.03);
+    margin-top: 40px;
+}
+
+.footer-text {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.footer-text a {
+    color: var(--cyan);
+    transition: var(--transition);
+}
+
+.footer-text a:hover {
+    color: var(--gold);
+}
+
+/* ============================================================
+   VIRSENSWAP — GLASS + DIAMOND SHINE ADD-ON
+   ------------------------------------------------------------
+   IMPORTANT:
+   This section is ADDITIVE ONLY.
+   The original CSS above is intentionally untouched.
+   No original colors, dimensions, spacing, layout, typography,
+   responsive rules, or functionality are changed.
+   ============================================================ */
+
+
+/* ---------- GLASS SURFACE: EXISTING CARDS ONLY ---------- */
+
+.card,
+.swap-card,
+.info-card,
+.token-card,
+.feature-card,
+.stat-card,
+.panel,
+.modal-content {
+    background-image:
+        linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.045),
+            rgba(255, 255, 255, 0.012) 42%,
+            rgba(0, 184, 255, 0.018)
+        );
+    background-blend-mode: screen;
+    box-shadow:
+        var(--shadow-lg),
+        inset 0 1px 0 rgba(255, 255, 255, 0.075),
+        inset 0 -1px 0 rgba(0, 184, 255, 0.035);
+}
+
+
+/* ---------- GLASS INPUTS ---------- */
+
+input,
+select,
+textarea {
+    background-image:
+        linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.025),
+            rgba(255, 255, 255, 0.006)
+        );
+    background-blend-mode: screen;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.045),
+        inset 0 -1px 0 rgba(0, 184, 255, 0.025);
+}
+
+
+/* ---------- DIAMOND TOP REFLECTION ---------- */
+
+.card::before,
+.swap-card::before,
+.info-card::before,
+.token-card::before,
+.feature-card::before,
+.stat-card::before,
+.panel::before,
+.modal-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 5%;
+    width: 90%;
+    height: 1px;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.28),
+            rgba(244, 197, 66, 0.24),
+            rgba(0, 184, 255, 0.28),
+            transparent
+        );
+    opacity: 0.75;
+    pointer-events: none;
+    z-index: 3;
+}
+
+
+/* ---------- DIAMOND LIGHT SWEEP ---------- */
+
+.card::after,
+.swap-card::after,
+.info-card::after,
+.token-card::after,
+.feature-card::after,
+.stat-card::after,
+.panel::after {
+    content: "";
+    position: absolute;
+    top: -130%;
+    left: -75%;
+    width: 32%;
+    height: 360%;
+    background:
+        linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.018) 28%,
+            rgba(255, 255, 255, 0.12) 43%,
+            rgba(255, 255, 255, 0.38) 50%,
+            rgba(255, 255, 255, 0.10) 57%,
+            rgba(255, 255, 255, 0.015) 72%,
+            transparent 100%
+        );
+    transform: rotate(25deg);
+    pointer-events: none;
+    z-index: 4;
+    animation: virsenDiamondSweep 8s ease-in-out infinite;
+}
+
+@keyframes virsenDiamondSweep {
+    0% {
+        left: -75%;
+        opacity: 0;
+    }
+    18% {
+        opacity: 0;
+    }
+    38% {
+        opacity: 0.72;
+    }
+    55% {
+        opacity: 0.82;
+    }
+    70% {
+        opacity: 0;
+    }
+    100% {
+        left: 145%;
+        opacity: 0;
+    }
+}
+
+
+/* ---------- GLASS HOVER — VISUAL ONLY ---------- */
+
+.card:hover,
+.swap-card:hover,
+.info-card:hover,
+.token-card:hover,
+.feature-card:hover,
+.stat-card:hover,
+.panel:hover {
+    box-shadow:
+        var(--shadow-lg),
+        inset 0 1px 0 rgba(255, 255, 255, 0.095),
+        inset 0 -1px 0 rgba(0, 184, 255, 0.035);
+}
+
+
+/* ---------- EXISTING BUTTONS: DIAMOND REFLECTION ---------- */
+
+button,
+.btn,
+.swap-btn,
+.connect-btn,
+.action-btn {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+button::after,
+.btn::after,
+.swap-btn::after,
+.connect-btn::after,
+.action-btn::after {
+    content: "";
+    position: absolute;
+    top: -120%;
+    left: -75%;
+    width: 30%;
+    height: 340%;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.06),
+            rgba(255, 255, 255, 0.34),
+            rgba(255, 255, 255, 0.06),
+            transparent
+        );
+    transform: rotate(25deg);
+    pointer-events: none;
+    z-index: 2;
+    animation: virsenButtonDiamond 6s ease-in-out infinite;
+}
+
+@keyframes virsenButtonDiamond {
+    0% {
+        left: -75%;
+        opacity: 0;
+    }
+    25% {
+        opacity: 0;
+    }
+    45% {
+        opacity: 0.72;
+    }
+    60% {
+        opacity: 0;
+    }
+    100% {
+        left: 145%;
+        opacity: 0;
+    }
+}
+
+
+/* ---------- EXISTING GOLD / CYAN / GREEN GLOW — NO COLOR CHANGE ---------- */
+
+.btn,
+.swap-btn,
+.connect-btn,
+.action-btn {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+
+/* ---------- PROGRESS / LOADING SHINE ---------- */
+
+.progress-bar,
+.progress-fill,
+.progress,
+.loading-bar {
+    overflow: hidden;
+}
+
+.progress-bar::after,
+.progress-fill::after,
+.progress::after,
+.loading-bar::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    left: -60%;
+    width: 28%;
+    height: 140%;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.32),
+            transparent
+        );
+    transform: skewX(-20deg);
+    pointer-events: none;
+    animation: virsenProgressDiamond 4s ease-in-out infinite;
+}
+
+@keyframes virsenProgressDiamond {
+    0% {
+        left: -60%;
+        opacity: 0;
+    }
+    25% {
+        opacity: 0.65;
+    }
+    55% {
+        left: 135%;
+        opacity: 0;
+    }
+    100% {
+        left: 135%;
+        opacity: 0;
+    }
+}
+
+
+/* ---------- OPTIONAL DIAMOND SHINE CLASS ----------
+   You may add class="diamond-shine" to an existing element.
+   This does not change any existing dimensions.
+   ------------------------------------------------------- */
+
+.diamond-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.diamond-shine::after {
+    content: "";
+    position: absolute;
+    top: -120%;
+    left: -75%;
+    width: 30%;
+    height: 340%;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.06),
+            rgba(255, 255, 255, 0.38),
+            rgba(255, 255, 255, 0.06),
+            transparent
+        );
+    transform: rotate(25deg);
+    pointer-events: none;
+    z-index: 20;
+    animation: virsenOptionalDiamond 7s ease-in-out infinite;
+}
+
+@keyframes virsenOptionalDiamond {
+    0% {
+        left: -75%;
+        opacity: 0;
+    }
+    30% {
+        opacity: 0;
+    }
+    48% {
+        opacity: 0.75;
+    }
+    62% {
+        opacity: 0;
+    }
+    100% {
+        left: 145%;
+        opacity: 0;
+    }
+}
+
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .card::after,
+    .swap-card::after,
+    .info-card::after,
+    .token-card::after,
+    .feature-card::after,
+    .stat-card::after,
+    .panel::after,
+    button::after,
+    .btn::after,
+    .swap-btn::after,
+    .connect-btn::after,
+    .action-btn::after,
+    .diamond-shine::after {
+        animation: none !important;
+    }
+}
