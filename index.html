@@ -1,36 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VirsenSwap - VNT/VNST/USDT</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="swap-style.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- ===== CUSTOM CSS ===== -->
+    <link rel="stylesheet" href="swap-style.css" />
+
     <!-- Web3 -->
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
-    
-    <link rel="icon" href="data:,">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js">
+    </script>
+
+    <link rel="icon" href="data:," />
 </head>
+
 <body>
 
-    <!-- ===== NAVBAR ===== -->
+    <!-- ============================================================
+    NAVBAR
+    ============================================================ -->
     <nav class="navbar" id="navbar">
         <div class="container">
             <a href="index.html" class="logo">
-                <img src="assets/logo.png" alt="VirsenSwap Logo" onerror="this.style.display='none'">
+                <!-- Logo Image (optional) -->
+                <img src="assets/logo.png" alt="VirsenSwap Logo" onerror="this.style.display='none'" />
                 <span class="logo-text">VirsenSwap</span>
             </a>
+
             <button class="hamburger" id="mobileMenuBtn" aria-label="Toggle menu">
                 <i class="fas fa-bars"></i>
             </button>
+
             <ul class="nav-links" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="stake.html">Stake</a></li>
@@ -38,55 +45,66 @@
                 <li><a href="swap.html" class="active">Swap</a></li>
                 <li>
                     <button id="connectWalletBtn" class="nav-connect-btn">
-                        Connect Wallet
+                        <i class="fas fa-wallet"></i> Connect Wallet
                     </button>
                 </li>
             </ul>
         </div>
     </nav>
 
-    <!-- ===== MAIN CONTENT ===== -->
+    <!-- ============================================================
+    MAIN CONTENT
+    ============================================================ -->
     <div class="container">
-        
-        <!-- Page Header -->
+
+        <!-- ===== PAGE HEADER ===== -->
         <header class="page-header">
             <h1>VirsenSwap</h1>
             <p class="subtitle">Swap VNT, VNST &amp; USDT with ease</p>
         </header>
 
-        <!-- Wallet Info -->
+        <!-- ===== WALLET INFO ===== -->
         <div id="walletInfo" class="hidden">
-            <p>Connected: <span id="walletAddress">-</span></p>
-            <p>VNT Balance: <span id="vntBalance">0</span></p>
-            <p>VNST Balance: <span id="vnstBalance">0</span></p>
-            <p>USDT Balance: <span id="usdtBalance">0</span></p>
-            <div class="wallet-status">✅ Ready for swap</div>
+            <p>
+                <i class="fas fa-user-circle"></i>
+                <span id="walletAddress">-</span>
+            </p>
+            <p>
+                <i class="fas fa-coins"></i> VNT: <span id="vntBalance">0</span>
+            </p>
+            <p>
+                <i class="fas fa-coins"></i> VNST: <span id="vnstBalance">0</span>
+            </p>
+            <p>
+                <i class="fas fa-coins"></i> USDT: <span id="usdtBalance">0</span>
+            </p>
+            <div class="wallet-status">✅ Ready</div>
         </div>
 
-        <!-- Tabs -->
+        <!-- ===== TABS ===== -->
         <div class="tabs">
             <button class="tab-button active" data-tab="buy">Buy</button>
             <button class="tab-button" data-tab="sell">Sell</button>
             <button class="tab-button" data-tab="swap">Swap</button>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- BUY SECTION -->
-        <!-- ============================================================ -->
+        <!-- ============================================================
+        BUY SECTION
+        ============================================================ -->
         <div id="buySection" class="tab-content active">
-            
+
             <!-- Info Card -->
             <div class="info-card">
                 <div class="info-row">
-                    <span class="info-label">VNT Price</span>
+                    <span class="info-label"><i class="fas fa-tag"></i> VNT Price</span>
                     <span class="info-value gold" id="vntPrice">Loading...</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">VNST Price</span>
+                    <span class="info-label"><i class="fas fa-tag"></i> VNST Price</span>
                     <span class="info-value gold" id="vnstPrice">Loading...</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Min Swap</span>
+                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Min Swap</span>
                     <span class="info-value cyan" id="minSwapAmount">Loading...</span>
                 </div>
             </div>
@@ -96,9 +114,9 @@
                 <div class="swap-form">
                     <div class="input-group">
                         <label for="usdtAmountBuy"><i class="fas fa-coins"></i> USDT Amount</label>
-                        <input type="number" id="usdtAmountBuy" placeholder="Enter USDT amount" step="any" min="0" autocomplete="off">
+                        <input type="number" id="usdtAmountBuy" placeholder="Enter USDT amount" step="any" min="0" autocomplete="off" />
                     </div>
-                    
+
                     <div class="action-buttons">
                         <button id="buyVNTBtn" class="gold-btn" disabled>
                             <i class="fas fa-arrow-right"></i> Buy VNT
@@ -107,7 +125,7 @@
                             <i class="fas fa-arrow-right"></i> Buy VNST
                         </button>
                     </div>
-                    
+
                     <div id="buyQuoteResult" class="quote-result hidden">
                         <p id="buyQuoteText">You will receive: <strong>0</strong></p>
                     </div>
@@ -115,25 +133,25 @@
             </div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- SELL SECTION -->
-        <!-- ============================================================ -->
+        <!-- ============================================================
+        SELL SECTION
+        ============================================================ -->
         <div id="sellSection" class="tab-content">
-            
+
             <!-- Info Card -->
             <div class="info-card">
                 <div class="info-row">
-                    <span class="info-label">Sell VNT Rate</span>
+                    <span class="info-label"><i class="fas fa-tag"></i> Sell VNT Rate</span>
                     <span class="info-value gold" id="sellVNTPrice">Loading...</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Min Swap</span>
+                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Min Swap</span>
                     <span class="info-value cyan" id="sellMinSwap">Loading...</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Max Swap</span>
+                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Max Swap</span>
                     <span class="info-value orange" id="sellMaxSwap">Loading...</span>
-            </div>
+                </div>
             </div>
 
             <!-- Swap Form -->
@@ -141,15 +159,15 @@
                 <div class="swap-form">
                     <div class="input-group">
                         <label for="vntAmountSell"><i class="fas fa-coins"></i> VNT Amount</label>
-                        <input type="number" id="vntAmountSell" placeholder="Enter VNT amount" step="any" min="0" autocomplete="off">
+                        <input type="number" id="vntAmountSell" placeholder="Enter VNT amount" step="any" min="0" autocomplete="off" />
                     </div>
-                    
+
                     <div class="action-buttons">
                         <button id="sellVNTBtn" class="gold-btn" disabled>
                             <i class="fas fa-arrow-right"></i> Sell VNT
                         </button>
                     </div>
-                    
+
                     <div id="sellQuoteResult" class="quote-result hidden">
                         <p id="sellQuoteText">You will receive: <strong>0 USDT</strong></p>
                     </div>
@@ -157,19 +175,19 @@
             </div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- SWAP SECTION (VNT → VNST) -->
-        <!-- ============================================================ -->
+        <!-- ============================================================
+        SWAP SECTION (VNT → VNST)
+        ============================================================ -->
         <div id="swapSection" class="tab-content">
-            
+
             <!-- Info Card -->
             <div class="info-card">
                 <div class="info-row">
-                    <span class="info-label">VNT → VNST Rate</span>
+                    <span class="info-label"><i class="fas fa-exchange-alt"></i> VNT → VNST Rate</span>
                     <span class="info-value gold" id="swapRate">Loading...</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Min Swap</span>
+                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Min Swap</span>
                     <span class="info-value cyan" id="swapMin">Loading...</span>
                 </div>
             </div>
@@ -179,15 +197,15 @@
                 <div class="swap-form">
                     <div class="input-group">
                         <label for="vntAmountSwap"><i class="fas fa-coins"></i> VNT Amount</label>
-                        <input type="number" id="vntAmountSwap" placeholder="Enter VNT amount" step="any" min="0" autocomplete="off">
+                        <input type="number" id="vntAmountSwap" placeholder="Enter VNT amount" step="any" min="0" autocomplete="off" />
                     </div>
-                    
+
                     <div class="action-buttons">
                         <button id="swapVNTToVNSTBtn" class="green-btn" disabled>
                             <i class="fas fa-exchange-alt"></i> Swap VNT → VNST
                         </button>
                     </div>
-                    
+
                     <div id="swapQuoteResult" class="quote-result hidden">
                         <p id="swapQuoteText">You will receive: <strong>0 VNST</strong></p>
                     </div>
@@ -195,12 +213,15 @@
             </div>
         </div>
 
-        <!-- Status Messages -->
+        <!-- ===== STATUS MESSAGES ===== -->
         <div id="statusMessages"></div>
 
     </div>
+    <!-- /container -->
 
-    <!-- ===== FOOTER ===== -->
+    <!-- ============================================================
+    FOOTER
+    ============================================================ -->
     <footer class="footer">
         <div class="container">
             <p class="footer-text">
@@ -209,7 +230,11 @@
         </div>
     </footer>
 
-    <!-- ===== SCRIPTS ===== -->
+    <!-- ============================================================
+    SCRIPTS
+    ============================================================ -->
+
+    <!-- Mobile Menu & Navbar Scripts -->
     <script>
         // ---- Mobile Menu Toggle ----
         document.getElementById('mobileMenuBtn').addEventListener('click', function() {
@@ -217,7 +242,7 @@
         });
 
         // ---- Close menu on link click ----
-        document.querySelectorAll('.nav-links a').forEach(link => {
+        document.querySelectorAll('.nav-links a').forEach(function(link) {
             link.addEventListener('click', function() {
                 document.getElementById('navMenu').classList.remove('open');
             });
@@ -225,7 +250,7 @@
 
         // ---- Navbar Scroll Effect ----
         window.addEventListener('scroll', function() {
-            const navbar = document.getElementById('navbar');
+            var navbar = document.getElementById('navbar');
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');
             } else {
@@ -233,8 +258,10 @@
             }
         });
     </script>
-    
+
     <!-- Main Swap Script -->
-    <script src="swap-script.js"></script>
+    <script src="swap-script.js">
+    </script>
+
 </body>
 </html>
