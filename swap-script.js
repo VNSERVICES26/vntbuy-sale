@@ -987,7 +987,6 @@ async function completeFix() {
         
         console.log('2️⃣ Approving VNT...');
         const vntAmount = web3.utils.toBN(1000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(18)));
-        const gasPrice = await getGasPrice();
 
         await vntToken.methods.approve(
             CONFIG[NETWORK].swapContractAddress,
