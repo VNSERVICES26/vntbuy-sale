@@ -1,31 +1,31 @@
 const CONFIG = {
-    testnet: {
-        swapContractAddress: "0xFce9c03F5C0a38d29677aE8a84a58A38aFB1a737",
-        vntTokenAddress: "0x7917B8A03EAEd57802DAc9cEd9E4A42477DB004c",
-        vnstTokenAddress: "0x05eebbDa5a53B8358eb31dBB8Fb59EaCd1e43C61",
-        usdtTokenAddress: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-        chainId: "0x61",
-        rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/"
+    mainnet: {
+        swapContractAddress: "YOUR_MAINNET_SWAP_CONTRACT",
+        vntTokenAddress: "YOUR_MAINNET_VNT_TOKEN",
+        vnstTokenAddress: "YOUR_MAINNET_VNST_TOKEN",
+        usdtTokenAddress: "0x55d398326f99059fF775485246999027B3197955",
+        chainId: "0x38",
+        rpcUrl: "https://bsc-dataseed.binance.org/"
     }
 };
 
-const NETWORK = 'testnet';
+const NETWORK = 'mainnet';
 
 let web3, swapContract, vntToken, vnstToken, usdtToken;
 let currentAccount = null;
 let vntDecimals = 18, vnstDecimals = 18, usdtDecimals = 18;
 let minVNTBuyAmount = 0, minVNSTBuyAmount = 0, minVNTSwapAmount = 0;
-let maxVNTBuyAmount = 0;  // ✅ NEW: Max VNT Buy amount
+let maxVNTBuyAmount = 0;
 let minSwapAmount = 0, swapFeeBNB = 0, vntPrice = 0, vnstPrice = 0, vntToVnstPrice = 0;
 let contractInitialized = false;
 
 // Gas Settings
 const GAS_LIMIT = 500000;
-const GAS_PRICE = '5000000000';
 
-// ============================================================
-// ✅ UPDATED SWAP_ABI - With MaxVNTBuy
-// ============================================================
+async function getGasPrice() {
+    return await web3.eth.getGasPrice();
+}
+
 const SWAP_ABI = [
     {
         "inputs": [
@@ -45,7 +45,7 @@ const SWAP_ABI = [
         "type":"constructor"
     },
     {"inputs":[],"name":"AlreadyPaused","type":"error"},
-    {"inputs":[],"name":"AmountTooSmall","type":"error"},  // ✅ NEW
+    {"inputs":[],"name":"AmountTooSmall","type":"error"},
     {"inputs":[],"name":"ContractPaused","type":"error"},
     {"inputs":[],"name":"FeeMismatch","type":"error"},
     {"inputs":[],"name":"InsufficientAllowance","type":"error"},
@@ -70,7 +70,7 @@ const SWAP_ABI = [
     {
         "anonymous":false,
         "inputs":[{"indexed":false,"internalType":"uint256","name":"oldMax","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newMax","type":"uint256"}],
-        "name":"MaxSwapUpdated","type":"event"  // ✅ NEW
+        "name":"MaxSwapUpdated","type":"event"
     },
     {
         "anonymous":false,
@@ -142,7 +142,7 @@ const SWAP_ABI = [
             {"internalType":"address","name":"_owner","type":"address"},
             {"internalType":"bool","name":"_paused","type":"bool"},
             {"internalType":"uint256","name":"_minVNTBuy","type":"uint256"},
-            {"internalType":"uint256","name":"_maxVNTBuy","type":"uint256"},  // ✅ NEW
+            {"internalType":"uint256","name":"_maxVNTBuy","type":"uint256"},
             {"internalType":"uint256","name":"_minVNSTBuy","type":"uint256"},
             {"internalType":"uint256","name":"_minVNTSwap","type":"uint256"},
             {"internalType":"uint256","name":"_fee","type":"uint256"},
@@ -161,7 +161,7 @@ const SWAP_ABI = [
     {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserTotalSwaps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNSTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"usdtAmount","type":"uint256"}],"name":"getVNTQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-    {"inputs":[],"name":"maxVNTBuyAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},  // ✅ NEW
+    {"inputs":[],"name":"maxVNTBuyAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"minSwapAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -170,7 +170,7 @@ const SWAP_ABI = [
     {"inputs":[{"internalType":"uint256","name":"_vntPrice","type":"uint256"},{"internalType":"uint256","name":"_vnstPrice","type":"uint256"},{"internalType":"uint256","name":"_vntToVnstPrice","type":"uint256"}],"name":"setAllPrices","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address","name":"_vnt","type":"address"},{"internalType":"address","name":"_vnst","type":"address"},{"internalType":"address","name":"_usdt","type":"address"}],"name":"setAllTreasuries","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address payable","name":"newWallet","type":"address"}],"name":"setFeeWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"uint256","name":"newMax","type":"uint256"}],"name":"setMaxVNTBuy","outputs":[],"stateMutability":"nonpayable","type":"function"},  // ✅ NEW
+    {"inputs":[{"internalType":"uint256","name":"newMax","type":"uint256"}],"name":"setMaxVNTBuy","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"newMin","type":"uint256"}],"name":"setMinSwap","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setSwapFee","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address","name":"newTreasury","type":"address"}],"name":"setUSDTTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -194,9 +194,6 @@ const SWAP_ABI = [
     {"stateMutability":"payable","type":"receive"}
 ];
 
-// ============================================================
-// TOKEN ABI
-// ============================================================
 const TOKEN_ABI = [
     {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
     {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -204,12 +201,9 @@ const TOKEN_ABI = [
     {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
 ];
 
-// ============================================================
-// WINDOW LOAD
-// ============================================================
 window.addEventListener('load', async () => {
     try {
-        console.log('🔄 VirsenSwap UI initializing on testnet...');
+        console.log('🔄 VirsenSwap UI initializing on mainnet...');
         await setupEventListeners();
         await checkWalletConnection();
         await initContracts();
@@ -231,9 +225,6 @@ window.addEventListener('load', async () => {
     }
 });
 
-// ============================================================
-// UI SETUP FUNCTIONS
-// ============================================================
 function setupTabSystem() {
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -268,9 +259,6 @@ function setupInputListeners() {
     document.getElementById('vntAmountSwap').addEventListener('input', updateSwapQuote);
 }
 
-// ============================================================
-// UTILITY FUNCTIONS
-// ============================================================
 function toTokenUnits(amount, decimals = 18) {
     try {
         if (!web3 || !amount || amount === '' || isNaN(Number(amount))) {
@@ -338,9 +326,6 @@ function showMessage(message, type = 'status') {
     }, 8000);
 }
 
-// ============================================================
-// WALLET FUNCTIONS
-// ============================================================
 async function checkWalletConnection() {
     if (window.ethereum) {
         try {
@@ -430,13 +415,10 @@ function updateUI() {
     document.getElementById('walletInfo').classList.toggle('hidden', !isConnected);
 }
 
-// ============================================================
-// CONTRACT INITIALIZATION
-// ============================================================
 async function initContracts() {
     try {
         const config = CONFIG[NETWORK];
-        console.log(`Initializing contracts on testnet at:`, config.swapContractAddress);
+        console.log(`Initializing contracts on mainnet at:`, config.swapContractAddress);
         
         if (window.ethereum) {
             web3 = new Web3(window.ethereum);
@@ -451,19 +433,18 @@ async function initContracts() {
         
         try {
             const info = await swapContract.methods.getContractInfo().call();
-            // ✅ Updated: Now getting 11 values (including maxVNTBuy)
             minVNTBuyAmount = info._minVNTBuy;
-            maxVNTBuyAmount = info._maxVNTBuy;  // ✅ NEW
+            maxVNTBuyAmount = info._maxVNTBuy;
             minVNSTBuyAmount = info._minVNSTBuy;
             minVNTSwapAmount = info._minVNTSwap;
-            minSwapAmount = info._minVNTBuy; // For backward compatibility
+            minSwapAmount = info._minVNTBuy;
             swapFeeBNB = info._fee;
             vntPrice = info._vntPrice;
             vnstPrice = info._vnstPrice;
             vntToVnstPrice = info._vntToVnstPrice;
             console.log('✅ Contract info loaded successfully');
             console.log('Min VNT Buy:', minVNTBuyAmount.toString());
-            console.log('Max VNT Buy:', maxVNTBuyAmount.toString());  // ✅ NEW
+            console.log('Max VNT Buy:', maxVNTBuyAmount.toString());
             console.log('Min VNST Buy:', minVNSTBuyAmount.toString());
             console.log('Min VNT Swap:', minVNTSwapAmount.toString());
         } catch (err) {
@@ -472,7 +453,7 @@ async function initContracts() {
             vnstPrice = await swapContract.methods.vnstPrice().call();
             vntToVnstPrice = await swapContract.methods.vntToVnstPrice().call();
             minVNTBuyAmount = await swapContract.methods.minVNTBuyAmount().call();
-            maxVNTBuyAmount = await swapContract.methods.maxVNTBuyAmount().call();  // ✅ NEW
+            maxVNTBuyAmount = await swapContract.methods.maxVNTBuyAmount().call();
             minVNSTBuyAmount = await swapContract.methods.minVNSTBuyAmount().call();
             minVNTSwapAmount = await swapContract.methods.minVNTSwapAmount().call();
             minSwapAmount = minVNTBuyAmount;
@@ -487,7 +468,6 @@ async function initContracts() {
             console.warn('Error getting decimals, using defaults:', err);
         }
         
-        // Update UI - ✅ REMOVED Fee display
         document.getElementById('vntPrice').textContent = formatUnits(vntPrice, 18) + ' USDT';
         document.getElementById('vnstPrice').textContent = formatUnits(vnstPrice, 18) + ' USDT';
         document.getElementById('minSwapAmount').textContent = formatUnits(minVNTBuyAmount, 18) + ' USDT/VNT';
@@ -512,9 +492,6 @@ async function initContracts() {
     }
 }
 
-// ============================================================
-// QUOTE FUNCTIONS
-// ============================================================
 async function updateBuyQuote() {
     if (!contractInitialized || !currentAccount) return;
     const usdtAmount = document.getElementById('usdtAmountBuy').value;
@@ -564,7 +541,7 @@ async function updateSellQuote() {
     try {
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
         const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
-        const maxSwapBN = web3.utils.toBN(maxVNTBuyAmount);  // ✅ NEW
+        const maxSwapBN = web3.utils.toBN(maxVNTBuyAmount);
         
         if (vntBN.lt(minSwapBN)) {
             quoteResult.classList.remove('hidden');
@@ -573,7 +550,7 @@ async function updateSellQuote() {
             return;
         }
         
-        if (vntBN.gt(maxSwapBN)) {  // ✅ NEW - Max check
+        if (vntBN.gt(maxSwapBN)) {
             quoteResult.classList.remove('hidden');
             quoteText.textContent = `⚠️ Max: ${formatUnits(maxVNTBuyAmount, 18)} VNT`;
             document.getElementById('sellVNTBtn').disabled = true;
@@ -623,9 +600,6 @@ async function updateSwapQuote() {
     }
 }
 
-// ============================================================
-// APPROVAL FUNCTIONS
-// ============================================================
 async function checkAllowance(token, owner, spender, amount) {
     try {
         const allowance = await token.methods.allowance(owner, spender).call();
@@ -639,10 +613,12 @@ async function checkAllowance(token, owner, spender, amount) {
 async function approveToken(token, spender, amount, tokenName) {
     try {
         showMessage(`Approving ${tokenName}...`, 'status');
+        const gasPrice = await getGasPrice();
+
         const result = await token.methods.approve(spender, amount).send({
             from: currentAccount,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         showMessage(`✅ ${tokenName} approved!`, 'success');
         return true;
@@ -656,9 +632,6 @@ async function approveToken(token, spender, amount, tokenName) {
     }
 }
 
-// ============================================================
-// MAIN TRANSACTION FUNCTIONS
-// ============================================================
 async function buyVNT() {
     if (!contractInitialized || !currentAccount) {
         showMessage('Please connect wallet first', 'error');
@@ -687,11 +660,13 @@ async function buyVNT() {
         const minOut = web3.utils.toBN(vntQuote).mul(web3.utils.toBN(95)).div(web3.utils.toBN(100));
 
         showMessage('🔄 Buying VNT...', 'status');
+        const gasPrice = await getGasPrice();
+
         const result = await swapContract.methods.buyVNT(usdtBN.toString(), minOut.toString()).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         showMessage('✅ VNT purchased successfully!', 'success');
         await updateWalletInfo();
@@ -734,11 +709,13 @@ async function buyVNST() {
         const minOut = web3.utils.toBN(vnstQuote).mul(web3.utils.toBN(95)).div(web3.utils.toBN(100));
 
         showMessage('🔄 Buying VNST...', 'status');
+        const gasPrice = await getGasPrice();
+
         const result = await swapContract.methods.buyVNST(usdtBN.toString(), minOut.toString()).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         showMessage('✅ VNST purchased successfully!', 'success');
         await updateWalletInfo();
@@ -766,14 +743,14 @@ async function sellVNT() {
         }
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
         const minSwapBN = web3.utils.toBN(minVNTBuyAmount);
-        const maxSwapBN = web3.utils.toBN(maxVNTBuyAmount);  // ✅ NEW
+        const maxSwapBN = web3.utils.toBN(maxVNTBuyAmount);
         
         if (vntBN.lt(minSwapBN)) {
             showMessage(`Minimum: ${formatUnits(minVNTBuyAmount, 18)} VNT`, 'error');
             return;
         }
         
-        if (vntBN.gt(maxSwapBN)) {  // ✅ NEW - Max check
+        if (vntBN.gt(maxSwapBN)) {
             showMessage(`Maximum: ${formatUnits(maxVNTBuyAmount, 18)} VNT`, 'error');
             return;
         }
@@ -788,11 +765,13 @@ async function sellVNT() {
         const minOut = web3.utils.toBN(usdtQuote).mul(web3.utils.toBN(95)).div(web3.utils.toBN(100));
 
         showMessage('🔄 Selling VNT...', 'status');
+        const gasPrice = await getGasPrice();
+
         const result = await swapContract.methods.sellVNT(vntBN.toString(), minOut.toString()).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         showMessage('✅ VNT sold successfully!', 'success');
         await updateWalletInfo();
@@ -835,11 +814,13 @@ async function swapVNTToVNST() {
         const minOut = web3.utils.toBN(vnstQuote).mul(web3.utils.toBN(95)).div(web3.utils.toBN(100));
 
         showMessage('🔄 Swapping VNT → VNST...', 'status');
+        const gasPrice = await getGasPrice();
+
         const result = await swapContract.methods.swapVNTToVNST(vntBN.toString(), minOut.toString()).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         showMessage('✅ Swap successful!', 'success');
         await updateWalletInfo();
@@ -854,9 +835,6 @@ async function swapVNTToVNST() {
     }
 }
 
-// ============================================================
-// DEBUG FUNCTIONS
-// ============================================================
 async function checkContractStatus() {
     try {
         console.log('===== 📊 CONTRACT STATUS CHECK =====');
@@ -865,7 +843,7 @@ async function checkContractStatus() {
         console.log('Paused:', isPaused);
         
         console.log('Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
-        console.log('Max VNT Buy:', formatUnits(maxVNTBuyAmount, 18));  // ✅ NEW
+        console.log('Max VNT Buy:', formatUnits(maxVNTBuyAmount, 18));
         console.log('Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
         console.log('Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
         
@@ -900,7 +878,7 @@ async function checkContractStatus() {
         msg += `VNT: ${formatUnits(vntBal, vntDecimals)}\n`;
         msg += `VNST: ${formatUnits(vnstBal, vnstDecimals)}\n`;
         msg += `Min VNT Buy: ${formatUnits(minVNTBuyAmount, 18)}\n`;
-        msg += `Max VNT Buy: ${formatUnits(maxVNTBuyAmount, 18)}`;  // ✅ NEW
+        msg += `Max VNT Buy: ${formatUnits(maxVNTBuyAmount, 18)}`;
         
         showMessage(msg, 'status');
         
@@ -909,7 +887,7 @@ async function checkContractStatus() {
             vntBalance: vntBal,
             vnstBalance: vnstBal,
             minVNTBuy: minVNTBuyAmount,
-            maxVNTBuy: maxVNTBuyAmount,  // ✅ NEW
+            maxVNTBuy: maxVNTBuyAmount,
             minVNSTBuy: minVNSTBuyAmount,
             minVNTSwap: minVNTSwapAmount,
             paused: isPaused,
@@ -927,7 +905,7 @@ async function detailedDebug() {
     try {
         console.log('===== 🔍 DETAILED DEBUG START =====');
         console.log('Account:', currentAccount);
-        console.log('Contract:', CONFIG.testnet.swapContractAddress);
+        console.log('Contract:', CONFIG[NETWORK].swapContractAddress);
         
         const usdtBal = await usdtToken.methods.balanceOf(currentAccount).call();
         const vntBal = await vntToken.methods.balanceOf(currentAccount).call();
@@ -944,7 +922,7 @@ async function detailedDebug() {
         console.log('📋 CONTRACT INFO:');
         console.log('  Paused:', paused);
         console.log('  Min VNT Buy:', formatUnits(minVNTBuyAmount, 18));
-        console.log('  Max VNT Buy:', formatUnits(maxVNTBuyAmount, 18));  // ✅ NEW
+        console.log('  Max VNT Buy:', formatUnits(maxVNTBuyAmount, 18));
         console.log('  Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18));
         console.log('  Min VNT Swap:', formatUnits(minVNTSwapAmount, 18));
         
@@ -961,8 +939,8 @@ async function detailedDebug() {
         console.log('  VNST Treasury:', formatUnits(vnstTreasuryBal, vnstDecimals));
         console.log('  USDT Treasury:', formatUnits(usdtTreasuryBal, usdtDecimals));
         
-        const usdtAllowance = await usdtToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
-        const vntAllowance = await vntToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
+        const usdtAllowance = await usdtToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
+        const vntAllowance = await vntToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
         
         console.log('🔓 ALLOWANCES:');
         console.log('  USDT Allowance:', formatUnits(usdtAllowance, usdtDecimals));
@@ -1038,17 +1016,19 @@ async function approveUSDT() {
     try {
         console.log('🔄 Approving USDT...');
         const amount = web3.utils.toBN(100).mul(web3.utils.toBN(10).pow(web3.utils.toBN(6)));
+        const gasPrice = await getGasPrice();
+
         await usdtToken.methods.approve(
-            CONFIG.testnet.swapContractAddress,
+            CONFIG[NETWORK].swapContractAddress,
             amount.toString()
         ).send({
             from: currentAccount,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         console.log('✅ USDT Approved!');
         showMessage('✅ USDT approved successfully!', 'success');
-        const allowance = await usdtToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
+        const allowance = await usdtToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
         console.log('New USDT Allowance:', formatUnits(allowance, usdtDecimals));
     } catch (error) {
         console.error('Approve USDT error:', error);
@@ -1060,17 +1040,19 @@ async function approveVNT() {
     try {
         console.log('🔄 Approving VNT...');
         const amount = web3.utils.toBN(1000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(18)));
+        const gasPrice = await getGasPrice();
+        
         await vntToken.methods.approve(
-            CONFIG.testnet.swapContractAddress,
+            CONFIG[NETWORK].swapContractAddress,
             amount.toString()
         ).send({
             from: currentAccount,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         console.log('✅ VNT Approved!');
         showMessage('✅ VNT approved successfully!', 'success');
-        const allowance = await vntToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
+        const allowance = await vntToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
         console.log('New VNT Allowance:', formatUnits(allowance, vntDecimals));
     } catch (error) {
         console.error('Approve VNT error:', error);
@@ -1081,8 +1063,8 @@ async function approveVNT() {
 async function checkAllowances() {
     try {
         console.log('===== 🔓 CHECKING ALLOWANCES =====');
-        const usdtAllowance = await usdtToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
-        const vntAllowance = await vntToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
+        const usdtAllowance = await usdtToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
+        const vntAllowance = await vntToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
         
         console.log('USDT Allowance:', formatUnits(usdtAllowance, usdtDecimals));
         console.log('VNT Allowance:', formatUnits(vntAllowance, vntDecimals));
@@ -1120,7 +1102,7 @@ async function testBuyVNST() {
         const usdtAmount = '1';
         const usdtBN = toTokenUnits(usdtAmount, usdtDecimals);
         
-        const allowance = await usdtToken.methods.allowance(currentAccount, CONFIG.testnet.swapContractAddress).call();
+        const allowance = await usdtToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
         if (web3.utils.toBN(allowance).lt(web3.utils.toBN(usdtBN))) {
             console.log('❌ Need to approve USDT first. Run: approveUSDT()');
             return;
@@ -1133,11 +1115,13 @@ async function testBuyVNST() {
         console.log('📝 Min Out:', formatUnits(minOut, vnstDecimals), 'VNST');
         
         console.log('🔄 Sending transaction...');
+        const gasPrice = await getGasPrice();
+
         const result = await swapContract.methods.buyVNST(usdtBN.toString(), minOut.toString()).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         
         console.log('✅ Success! Transaction:', result.transactionHash);
@@ -1155,25 +1139,29 @@ async function completeFix() {
         
         console.log('1️⃣ Approving USDT...');
         const usdtAmount = web3.utils.toBN(100).mul(web3.utils.toBN(10).pow(web3.utils.toBN(6)));
+        const gasPrice = await getGasPrice();
+        
         await usdtToken.methods.approve(
-            CONFIG.testnet.swapContractAddress,
+            CONFIG[NETWORK].swapContractAddress,
             usdtAmount.toString()
         ).send({
             from: currentAccount,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         console.log('✅ USDT approved');
         
         console.log('2️⃣ Approving VNT...');
         const vntAmount = web3.utils.toBN(1000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(18)));
+        const gasPrice = await getGasPrice();
+
         await vntToken.methods.approve(
-            CONFIG.testnet.swapContractAddress,
+            CONFIG[NETWORK].swapContractAddress,
             vntAmount.toString()
         ).send({
             from: currentAccount,
             gas: GAS_LIMIT,
-            gasPrice: GAS_PRICE
+            gasPrice: gasPrice
         });
         console.log('✅ VNT approved');
         
@@ -1186,9 +1174,6 @@ async function completeFix() {
     }
 }
 
-// ============================================================
-// Make debug functions available globally
-// ============================================================
 window.checkContractStatus = checkContractStatus;
 window.detailedDebug = detailedDebug;
 window.approveUSDT = approveUSDT;
