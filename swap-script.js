@@ -1006,3 +1006,36 @@ console.log('  approveVNT() - Approve VNT for spending');
 console.log('  checkAllowances() - Check token allowances');
 console.log('  testBuyVNST() - Test Buy VNST with 1 USDT (No Slippage)');
 console.log('  completeFix() - Run complete fix (approve both tokens)');
+
+// ============================================================
+// मोबाइल ऑटो-स्क्रॉल को रोकें
+// ============================================================
+(function preventAutoScroll() {
+    // पेज लोड होने पर टॉप पर रहें
+    window.addEventListener('load', function() {
+        // स्मूथ स्क्रॉल को अस्थायी रूप से डिसेबल करें
+        document.documentElement.style.scrollBehavior = 'auto';
+        
+        // टॉप पर स्क्रॉल करें
+        window.scrollTo(0, 0);
+        
+        // 100ms बाद स्मूथ स्क्रॉल वापस इनेबल करें
+        setTimeout(function() {
+            document.documentElement.style.scrollBehavior = '';
+            document.body.classList.add('loaded');
+        }, 100);
+    });
+    
+    // इनिशियलाइज़ेशन के दौरान स्क्रॉल रोकें
+    let isInitializing = true;
+    setTimeout(function() {
+        isInitializing = false;
+    }, 500);
+    
+    // इनिशियलाइज़ेशन के दौरान स्क्रॉल अटेम्प्ट को रोकें
+    window.addEventListener('scroll', function(e) {
+        if (isInitializing) {
+            window.scrollTo(0, 0);
+        }
+    }, { passive: true });
+})();
