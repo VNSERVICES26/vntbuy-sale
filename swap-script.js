@@ -18,9 +18,10 @@ let minVNTBuyAmount = 0, minVNSTBuyAmount = 0, minVNTSwapAmount = 0;
 let maxVNTSaleAmount = 0;
 let swapFeeBNB = 0, vntPrice = 0, vnstPrice = 0, vntToVnstPrice = 0;
 let contractInitialized = false;
+let isProcessing = false;
 
 // Gas Settings
-const GAS_LIMIT = 500000;
+const GAS_LIMIT = 800000;
 
 async function getGasPrice() {
     try {
@@ -32,14 +33,13 @@ async function getGasPrice() {
 }
 
 // ============================================================
-// ✅ FIXED: formatUnits Function
+// formatUnits Function
 // ============================================================
 function formatUnits(value, decimals = 18, maxFractionDigits = 6) {
     try {
         if (!web3) return '0';
         if (value === undefined || value === null || value === '') return '0';
         
-        // BigInt का इस्तेमाल करें
         let numValue;
         if (typeof value === 'string') {
             numValue = BigInt(value);
@@ -52,31 +52,22 @@ function formatUnits(value, decimals = 18, maxFractionDigits = 6) {
         }
         
         const divisor = BigInt(10) ** BigInt(decimals);
-        
-        // Whole part
         const whole = numValue / divisor;
         let fraction = numValue % divisor;
         
         if (whole === 0n && fraction === 0n) return '0';
         
-        // Fraction को स्ट्रिंग में बदलें
         let fractionStr = fraction.toString().padStart(decimals, '0');
-        
-        // maxFractionDigits तक लिमिट करें
         if (fractionStr.length > maxFractionDigits) {
             fractionStr = fractionStr.substring(0, maxFractionDigits);
         }
-        
-        // पीछे के जीरो हटाएं
         fractionStr = fractionStr.replace(/0+$/, '');
         
         if (fractionStr === '') {
             return whole.toString();
         }
         
-        // कॉमा के साथ फॉर्मेट करें
         const wholeStr = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        
         return `${wholeStr}.${fractionStr}`;
     } catch (error) {
         console.error('formatUnits error:', error);
@@ -85,7 +76,7 @@ function formatUnits(value, decimals = 18, maxFractionDigits = 6) {
 }
 
 // ============================================================
-// ✅ FIXED: toTokenUnits Function
+// toTokenUnits Function
 // ============================================================
 function toTokenUnits(amount, decimals = 18) {
     try {
@@ -138,7 +129,7 @@ const TOKEN_ABI = [
 ];
 
 // ============================================================
-// ✅ FIXED: initContracts Function
+// initContracts Function
 // ============================================================
 async function initContracts() {
     try {
@@ -156,7 +147,6 @@ async function initContracts() {
         vnstToken = new web3.eth.Contract(TOKEN_ABI, config.vnstTokenAddress);
         usdtToken = new web3.eth.Contract(TOKEN_ABI, config.usdtTokenAddress);
         
-        // ===== सीधे कॉन्ट्रैक्ट से वैल्यू लें =====
         try {
             vntPrice = await swapContract.methods.vntPrice().call();
             vnstPrice = await swapContract.methods.vnstPrice().call();
@@ -168,19 +158,8 @@ async function initContracts() {
             swapFeeBNB = await swapContract.methods.swapFeeBNB().call();
             
             console.log('✅ Contract values loaded successfully');
-            
-            // ===== डिबग - असली वैल्यू चेक करें =====
-            console.log('📊 Contract Values (Raw):');
-            console.log('  minVNTBuyAmount:', minVNTBuyAmount);
-            console.log('  maxVNTSaleAmount:', maxVNTSaleAmount);
-            console.log('  minVNSTBuyAmount:', minVNSTBuyAmount);
-            console.log('  minVNTSwapAmount:', minVNTSwapAmount);
-
-            console.log('📊 Contract Values (Formatted):');
-            console.log('  minVNTBuyAmount:', formatUnits(minVNTBuyAmount, 18, 2));
-            console.log('  maxVNTSaleAmount:', formatUnits(maxVNTSaleAmount, 18, 2));
-            console.log('  minVNSTBuyAmount:', formatUnits(minVNSTBuyAmount, 18, 2));
-            console.log('  minVNTSwapAmount:', formatUnits(minVNTSwapAmount, 18, 2));
+            console.log('📊 minVNTBuyAmount:', formatUnits(minVNTBuyAmount, 18, 2));
+            console.log('📊 maxVNTSaleAmount:', formatUnits(maxVNTSaleAmount, 18, 2));
             
         } catch (err) {
             console.error('Error loading contract values:', err);
@@ -196,46 +175,8 @@ async function initContracts() {
             console.warn('Error getting decimals, using defaults:', err);
         }
         
-        // ===== UI अपडेट करें =====
-        const vntPriceEl = document.getElementById('vntPrice');
-        const vnstPriceEl = document.getElementById('vnstPrice');
-        const minSwapAmountEl = document.getElementById('minSwapAmount');
-        const sellVNTPriceEl = document.getElementById('sellVNTPrice');
-        const sellMinSwapEl = document.getElementById('sellMinSwap');
-        const sellMaxSwapEl = document.getElementById('sellMaxSwap');
-        const swapRateEl = document.getElementById('swapRate');
-        const swapMinEl = document.getElementById('swapMin');
-        const minVNTDisplay = document.getElementById('minVNTBuyDisplay');
-        const minVNSTDisplay = document.getElementById('minVNSTBuyDisplay');
-        
-        if (vntPriceEl) vntPriceEl.textContent = formatUnits(vntPrice, 18, 4) + ' USDT';
-        if (vnstPriceEl) vnstPriceEl.textContent = formatUnits(vnstPrice, 18, 4) + ' USDT';
-        if (minSwapAmountEl) minSwapAmountEl.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' VNT';
-        if (sellVNTPriceEl) sellVNTPriceEl.textContent = formatUnits(vntPrice, 18, 4) + ' USDT/VNT';
-        
-        // ===== Sale Section Min/Max =====
-        if (sellMinSwapEl) {
-            const minVal = formatUnits(minVNTBuyAmount, 18, 2);
-            console.log('Setting sellMinSwap to:', minVal + ' VNT');
-            sellMinSwapEl.textContent = minVal + ' VNT';
-        }
-        
-        if (sellMaxSwapEl) {
-            const maxVal = formatUnits(maxVNTSaleAmount, 18, 2);
-            console.log('Setting sellMaxSwap to:', maxVal + ' VNT');
-            sellMaxSwapEl.textContent = maxVal + ' VNT';
-        }
-        
-        if (swapRateEl) swapRateEl.textContent = formatUnits(vntToVnstPrice, 18, 4) + ' VNST/VNT';
-        if (swapMinEl) swapMinEl.textContent = formatUnits(minVNTSwapAmount, 18, 2) + ' VNT';
-        
-        // ===== Buy Section Min Display =====
-        if (minVNTDisplay) {
-            minVNTDisplay.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' VNT';
-        }
-        if (minVNSTDisplay) {
-            minVNSTDisplay.textContent = formatUnits(minVNSTBuyAmount, 18, 2) + ' VNST';
-        }
+        // ===== UI UPDATE =====
+        updateAllUI();
         
         contractInitialized = true;
         if (currentAccount) {
@@ -254,7 +195,44 @@ async function initContracts() {
 }
 
 // ============================================================
-// ✅ FIXED: updateBuyQuote - Token Amount पर बटन Enable हों
+// UI Update Function
+// ============================================================
+function updateAllUI() {
+    const vntPriceEl = document.getElementById('vntPrice');
+    const vnstPriceEl = document.getElementById('vnstPrice');
+    const sellVNTPriceEl = document.getElementById('sellVNTPrice');
+    const sellMinSwapEl = document.getElementById('sellMinSwap');
+    const sellMaxSwapEl = document.getElementById('sellMaxSwap');
+    const swapRateEl = document.getElementById('swapRate');
+    const swapMinEl = document.getElementById('swapMin');
+    const minVNTDisplay = document.getElementById('minVNTBuyDisplay');
+    const minVNSTDisplay = document.getElementById('minVNSTBuyDisplay');
+    
+    if (vntPriceEl) vntPriceEl.textContent = formatUnits(vntPrice, 18, 4) + ' USDT';
+    if (vnstPriceEl) vnstPriceEl.textContent = formatUnits(vnstPrice, 18, 4) + ' USDT';
+    if (sellVNTPriceEl) sellVNTPriceEl.textContent = formatUnits(vntPrice, 18, 4) + ' USDT/VNT';
+    
+    if (sellMinSwapEl) {
+        sellMinSwapEl.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' VNT';
+    }
+    
+    if (sellMaxSwapEl) {
+        sellMaxSwapEl.textContent = formatUnits(maxVNTSaleAmount, 18, 2) + ' VNT';
+    }
+    
+    if (swapRateEl) swapRateEl.textContent = formatUnits(vntToVnstPrice, 18, 4) + ' VNST/VNT';
+    if (swapMinEl) swapMinEl.textContent = formatUnits(minVNTSwapAmount, 18, 2) + ' VNT';
+    
+    if (minVNTDisplay) {
+        minVNTDisplay.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' VNT';
+    }
+    if (minVNSTDisplay) {
+        minVNSTDisplay.textContent = formatUnits(minVNSTBuyAmount, 18, 2) + ' VNST';
+    }
+}
+
+// ============================================================
+// updateBuyQuote
 // ============================================================
 async function updateBuyQuote() {
     if (!contractInitialized || !currentAccount) return;
@@ -264,13 +242,11 @@ async function updateBuyQuote() {
     const quoteText = document.getElementById('buyQuoteText');
     const buyVNTBtn = document.getElementById('buyVNTBtn');
     const buyVNSTBtn = document.getElementById('buyVNSTBtn');
-    const tokenSelect = document.getElementById('tokenSelectBuy');
     
     if (!tokenAmount) return;
     
     const amount = tokenAmount.value;
     
-    // अगर कोई अमाउंट नहीं डाला
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
         if (quoteResult) quoteResult.classList.add('hidden');
         if (buyVNTBtn) buyVNTBtn.disabled = true;
@@ -283,31 +259,21 @@ async function updateBuyQuote() {
         const minVNTBN = web3.utils.toBN(minVNTBuyAmount);
         const minVNSTBN = web3.utils.toBN(minVNSTBuyAmount);
         
-        // ===== VNT के लिए चेक करें =====
         let vntValid = false;
         let vnstValid = false;
         let vntUsdtNeeded = '0';
         let vnstUsdtNeeded = '0';
         
-        // VNT चेक
         if (web3.utils.toBN(tokenBN).gte(minVNTBN)) {
             vntUsdtNeeded = web3.utils.toBN(tokenBN).mul(web3.utils.toBN(vntPrice)).div(web3.utils.toBN(10).pow(web3.utils.toBN(18))).toString();
             vntValid = true;
-            console.log('✅ VNT valid:', amount, 'VNT =>', formatUnits(vntUsdtNeeded, 18), 'USDT needed');
-        } else {
-            console.log('❌ VNT min not met. Need:', formatUnits(minVNTBN, 18), 'VNT');
         }
         
-        // VNST चेक
         if (web3.utils.toBN(tokenBN).gte(minVNSTBN)) {
             vnstUsdtNeeded = web3.utils.toBN(tokenBN).mul(web3.utils.toBN(vnstPrice)).div(web3.utils.toBN(10).pow(web3.utils.toBN(18))).toString();
             vnstValid = true;
-            console.log('✅ VNST valid:', amount, 'VNST =>', formatUnits(vnstUsdtNeeded, 18), 'USDT needed');
-        } else {
-            console.log('❌ VNST min not met. Need:', formatUnits(minVNSTBN, 18), 'VNST');
         }
         
-        // ===== QUOTE RESULT दिखाएं =====
         if (quoteResult) quoteResult.classList.remove('hidden');
         
         if (quoteText) {
@@ -332,17 +298,14 @@ async function updateBuyQuote() {
             quoteText.textContent = displayText;
         }
         
-        // ===== बटन Enable/Disable करें =====
         if (buyVNTBtn) {
             buyVNTBtn.disabled = !vntValid;
             buyVNTBtn.style.opacity = vntValid ? '1' : '0.5';
-            buyVNTBtn.style.cursor = vntValid ? 'pointer' : 'not-allowed';
         }
         
         if (buyVNSTBtn) {
             buyVNSTBtn.disabled = !vnstValid;
             buyVNSTBtn.style.opacity = vnstValid ? '1' : '0.5';
-            buyVNSTBtn.style.cursor = vnstValid ? 'pointer' : 'not-allowed';
         }
         
     } catch (error) {
@@ -355,7 +318,7 @@ async function updateBuyQuote() {
 }
 
 // ============================================================
-// ✅ updateSellQuote
+// updateSellQuote
 // ============================================================
 async function updateSellQuote() {
     if (!contractInitialized || !currentAccount) return;
@@ -401,7 +364,7 @@ async function updateSellQuote() {
 }
 
 // ============================================================
-// ✅ updateSwapQuote
+// updateSwapQuote
 // ============================================================
 async function updateSwapQuote() {
     if (!contractInitialized || !currentAccount) return;
@@ -556,7 +519,7 @@ async function approveToken(token, spender, amount, tokenName) {
     try {
         showMessage(`Approving ${tokenName}...`, 'status');
         const gasPrice = await getGasPrice();
-        const result = await token.methods.approve(spender, amount).send({
+        await token.methods.approve(spender, amount).send({
             from: currentAccount,
             gas: GAS_LIMIT,
             gasPrice: gasPrice
@@ -574,18 +537,22 @@ async function approveToken(token, spender, amount, tokenName) {
 }
 
 // ============================================================
-// ✅ FIXED: Buy Functions
+// Buy Functions
 // ============================================================
 async function buyVNT() {
+    if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
         showMessage('Please connect wallet first', 'error');
         return;
     }
+    
+    isProcessing = true;
     try {
         const tokenAmount = document.getElementById('tokenAmountBuy').value;
         
         if (!tokenAmount || isNaN(tokenAmount) || Number(tokenAmount) <= 0) {
             showMessage('Enter valid token amount', 'error');
+            isProcessing = false;
             return;
         }
         
@@ -594,23 +561,25 @@ async function buyVNT() {
         
         if (web3.utils.toBN(tokenBN).lt(minVNTBN)) {
             showMessage(`Minimum: ${formatUnits(minVNTBuyAmount, 18)} VNT`, 'error');
+            isProcessing = false;
             return;
         }
         
-        // कितना USDT चाहिए calculate करें
         const usdtNeeded = web3.utils.toBN(tokenBN).mul(web3.utils.toBN(vntPrice)).div(web3.utils.toBN(10).pow(web3.utils.toBN(18))).toString();
         
-        // USDT Allowance चेक करें
         const hasAllowance = await checkAllowance(usdtToken, currentAccount, CONFIG[NETWORK].swapContractAddress, usdtNeeded);
         if (!hasAllowance) {
             const approved = await approveToken(usdtToken, CONFIG[NETWORK].swapContractAddress, usdtNeeded, 'USDT');
-            if (!approved) return;
+            if (!approved) {
+                isProcessing = false;
+                return;
+            }
         }
 
         showMessage(`🔄 Buying ${tokenAmount} VNT...`, 'status');
         const gasPrice = await getGasPrice();
 
-        const result = await swapContract.methods.buyVNT(usdtNeeded).send({
+        await swapContract.methods.buyVNT(usdtNeeded).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
@@ -629,18 +598,23 @@ async function buyVNT() {
             showMessage(`Failed: ${error.message}`, 'error');
         }
     }
+    isProcessing = false;
 }
 
 async function buyVNST() {
+    if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
         showMessage('Please connect wallet first', 'error');
         return;
     }
+    
+    isProcessing = true;
     try {
         const tokenAmount = document.getElementById('tokenAmountBuy').value;
         
         if (!tokenAmount || isNaN(tokenAmount) || Number(tokenAmount) <= 0) {
             showMessage('Enter valid token amount', 'error');
+            isProcessing = false;
             return;
         }
         
@@ -649,6 +623,7 @@ async function buyVNST() {
         
         if (web3.utils.toBN(tokenBN).lt(minVNSTBN)) {
             showMessage(`Minimum: ${formatUnits(minVNSTBuyAmount, 18)} VNST`, 'error');
+            isProcessing = false;
             return;
         }
         
@@ -657,13 +632,16 @@ async function buyVNST() {
         const hasAllowance = await checkAllowance(usdtToken, currentAccount, CONFIG[NETWORK].swapContractAddress, usdtNeeded);
         if (!hasAllowance) {
             const approved = await approveToken(usdtToken, CONFIG[NETWORK].swapContractAddress, usdtNeeded, 'USDT');
-            if (!approved) return;
+            if (!approved) {
+                isProcessing = false;
+                return;
+            }
         }
 
         showMessage(`🔄 Buying ${tokenAmount} VNST...`, 'status');
         const gasPrice = await getGasPrice();
 
-        const result = await swapContract.methods.buyVNST(usdtNeeded).send({
+        await swapContract.methods.buyVNST(usdtNeeded).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
@@ -682,20 +660,25 @@ async function buyVNST() {
             showMessage(`Failed: ${error.message}`, 'error');
         }
     }
+    isProcessing = false;
 }
 
 // ============================================================
-// Sell & Swap Functions
+// Sell Function
 // ============================================================
 async function sellVNT() {
+    if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
         showMessage('Please connect wallet first', 'error');
         return;
     }
+    
+    isProcessing = true;
     try {
         const vntAmount = document.getElementById('vntAmountSell').value;
         if (!vntAmount || isNaN(vntAmount) || Number(vntAmount) <= 0) {
             showMessage('Enter valid VNT amount', 'error');
+            isProcessing = false;
             return;
         }
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
@@ -704,32 +687,39 @@ async function sellVNT() {
         
         if (web3.utils.toBN(vntBN).lt(minSwapBN)) {
             showMessage(`Minimum: ${formatUnits(minVNTBuyAmount, 18)} VNT`, 'error');
+            isProcessing = false;
             return;
         }
         
         if (web3.utils.toBN(vntBN).gt(maxSwapBN)) {
             showMessage(`Maximum: ${formatUnits(maxVNTSaleAmount, 18)} VNT`, 'error');
+            isProcessing = false;
             return;
         }
 
         const hasAllowance = await checkAllowance(vntToken, currentAccount, CONFIG[NETWORK].swapContractAddress, vntBN);
         if (!hasAllowance) {
             const approved = await approveToken(vntToken, CONFIG[NETWORK].swapContractAddress, vntBN, 'VNT');
-            if (!approved) return;
+            if (!approved) {
+                isProcessing = false;
+                return;
+            }
         }
 
         showMessage('🔄 Selling VNT...', 'status');
         const gasPrice = await getGasPrice();
 
-        const result = await swapContract.methods.sellVNT(vntBN).send({
+        await swapContract.methods.sellVNT(vntBN).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
             gasPrice: gasPrice
         });
+        
         showMessage('✅ VNT sold successfully!', 'success');
         await updateWalletInfo();
         updateSellQuote();
+        
     } catch (error) {
         console.error('Sell VNT error:', error);
         if (error.code === 4001) {
@@ -738,44 +728,58 @@ async function sellVNT() {
             showMessage(`Failed: ${error.message}`, 'error');
         }
     }
+    isProcessing = false;
 }
 
+// ============================================================
+// Swap Function
+// ============================================================
 async function swapVNTToVNST() {
+    if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
         showMessage('Please connect wallet first', 'error');
         return;
     }
+    
+    isProcessing = true;
     try {
         const vntAmount = document.getElementById('vntAmountSwap').value;
         if (!vntAmount || isNaN(vntAmount) || Number(vntAmount) <= 0) {
             showMessage('Enter valid VNT amount', 'error');
+            isProcessing = false;
             return;
         }
         const vntBN = toTokenUnits(vntAmount, vntDecimals);
         const minSwapBN = web3.utils.toBN(minVNTSwapAmount);
         if (web3.utils.toBN(vntBN).lt(minSwapBN)) {
             showMessage(`Minimum: ${formatUnits(minVNTSwapAmount, 18)} VNT`, 'error');
+            isProcessing = false;
             return;
         }
 
         const hasAllowance = await checkAllowance(vntToken, currentAccount, CONFIG[NETWORK].swapContractAddress, vntBN);
         if (!hasAllowance) {
             const approved = await approveToken(vntToken, CONFIG[NETWORK].swapContractAddress, vntBN, 'VNT');
-            if (!approved) return;
+            if (!approved) {
+                isProcessing = false;
+                return;
+            }
         }
 
         showMessage('🔄 Swapping VNT → VNST...', 'status');
         const gasPrice = await getGasPrice();
 
-        const result = await swapContract.methods.swapVNTToVNST(vntBN).send({
+        await swapContract.methods.swapVNTToVNST(vntBN).send({
             from: currentAccount,
             value: swapFeeBNB,
             gas: GAS_LIMIT,
             gasPrice: gasPrice
         });
+        
         showMessage('✅ Swap successful!', 'success');
         await updateWalletInfo();
         updateSwapQuote();
+        
     } catch (error) {
         console.error('Swap error:', error);
         if (error.code === 4001) {
@@ -784,6 +788,7 @@ async function swapVNTToVNST() {
             showMessage(`Failed: ${error.message}`, 'error');
         }
     }
+    isProcessing = false;
 }
 
 // ============================================================
@@ -817,10 +822,10 @@ async function setupEventListeners() {
     const swapBtn = document.getElementById('swapVNTToVNSTBtn');
     
     if (connectBtn) connectBtn.addEventListener('click', connectWallet);
-    if (buyVNTBtn) buyVNTBtn.addEventListener('click', () => buyVNT());
-    if (buyVNSTBtn) buyVNSTBtn.addEventListener('click', () => buyVNST());
-    if (sellVNTBtn) sellVNTBtn.addEventListener('click', () => sellVNT());
-    if (swapBtn) swapBtn.addEventListener('click', () => swapVNTToVNST());
+    if (buyVNTBtn) buyVNTBtn.addEventListener('click', buyVNT);
+    if (buyVNSTBtn) buyVNSTBtn.addEventListener('click', buyVNST);
+    if (sellVNTBtn) sellVNTBtn.addEventListener('click', sellVNT);
+    if (swapBtn) swapBtn.addEventListener('click', swapVNTToVNST);
 }
 
 function setupInputListeners() {
@@ -834,7 +839,7 @@ function setupInputListeners() {
 }
 
 // ============================================================
-// ✅ FIXED: Mobile Auto-Scroll Prevention
+// Mobile Auto-Scroll Prevention
 // ============================================================
 (function preventAutoScroll() {
     window.addEventListener('load', function() {
@@ -859,7 +864,7 @@ function setupInputListeners() {
 })();
 
 // ============================================================
-// ✅ Initialize
+// Initialize
 // ============================================================
 window.addEventListener('load', async () => {
     try {
@@ -871,13 +876,6 @@ window.addEventListener('load', async () => {
         setupTabSystem();
         updateUI();
         console.log('✅ VirsenSwap UI initialized successfully');
-        console.log('📝 Available debug commands:');
-        console.log('  - checkContractStatus()');
-        console.log('  - detailedDebug()');
-        console.log('  - approveUSDT()');
-        console.log('  - approveVNT()');
-        console.log('  - completeFix()');
-        console.log('  - checkAllowances()');
     } catch (error) {
         console.error('❌ Initialization error:', error);
         showMessage('Failed to initialize: ' + error.message, 'error');
@@ -885,20 +883,17 @@ window.addEventListener('load', async () => {
 });
 
 // ============================================================
-// Debug Functions (Console Available)
+// Debug Functions
 // ============================================================
 async function checkContractStatus() {
     try {
         console.log('===== 📊 CONTRACT STATUS CHECK =====');
-        const isPaused = await swapContract.methods.paused().call();
-        console.log('Paused:', isPaused);
         console.log('Min VNT Buy:', formatUnits(minVNTBuyAmount, 18, 2));
         console.log('Max VNT Sale:', formatUnits(maxVNTSaleAmount, 18, 2));
         console.log('Min VNST Buy:', formatUnits(minVNSTBuyAmount, 18, 2));
         console.log('Min VNT Swap:', formatUnits(minVNTSwapAmount, 18, 2));
         console.log('VNT Price:', formatUnits(vntPrice, 18, 4));
         console.log('VNST Price:', formatUnits(vnstPrice, 18, 4));
-        console.log('VNT→VNST Price:', formatUnits(vntToVnstPrice, 18, 4));
         console.log('===== END CHECK =====');
         showMessage('✅ Contract status checked - see console', 'success');
     } catch (error) {
@@ -909,7 +904,6 @@ async function checkContractStatus() {
 
 async function approveUSDT() {
     try {
-        console.log('🔄 Approving USDT...');
         const amount = web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(usdtDecimals))).toString();
         const gasPrice = await getGasPrice();
         await usdtToken.methods.approve(CONFIG[NETWORK].swapContractAddress, amount).send({
@@ -917,17 +911,14 @@ async function approveUSDT() {
             gas: GAS_LIMIT,
             gasPrice: gasPrice
         });
-        console.log('✅ USDT Approved!');
         showMessage('✅ USDT approved successfully!', 'success');
     } catch (error) {
-        console.error('Approve USDT error:', error);
         showMessage('Failed to approve USDT', 'error');
     }
 }
 
 async function approveVNT() {
     try {
-        console.log('🔄 Approving VNT...');
         const amount = web3.utils.toBN(10000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(vntDecimals))).toString();
         const gasPrice = await getGasPrice();
         await vntToken.methods.approve(CONFIG[NETWORK].swapContractAddress, amount).send({
@@ -935,66 +926,25 @@ async function approveVNT() {
             gas: GAS_LIMIT,
             gasPrice: gasPrice
         });
-        console.log('✅ VNT Approved!');
         showMessage('✅ VNT approved successfully!', 'success');
     } catch (error) {
-        console.error('Approve VNT error:', error);
         showMessage('Failed to approve VNT', 'error');
-    }
-}
-
-async function checkAllowances() {
-    try {
-        console.log('===== 🔓 CHECKING ALLOWANCES =====');
-        const usdtAllowance = await usdtToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
-        const vntAllowance = await vntToken.methods.allowance(currentAccount, CONFIG[NETWORK].swapContractAddress).call();
-        console.log('USDT Allowance:', formatUnits(usdtAllowance, usdtDecimals));
-        console.log('VNT Allowance:', formatUnits(vntAllowance, vntDecimals));
-        console.log('===== END =====');
-    } catch (error) {
-        console.error('Error checking allowances:', error);
     }
 }
 
 async function completeFix() {
     try {
-        console.log('🔄 Starting complete fix...');
-        console.log('1️⃣ Approving USDT...');
-        const usdtAmount = web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(usdtDecimals))).toString();
-        const gasPrice = await getGasPrice();
-        await usdtToken.methods.approve(CONFIG[NETWORK].swapContractAddress, usdtAmount).send({
-            from: currentAccount,
-            gas: GAS_LIMIT,
-            gasPrice: gasPrice
-        });
-        console.log('✅ USDT approved');
-        console.log('2️⃣ Approving VNT...');
-        const vntAmount = web3.utils.toBN(10000).mul(web3.utils.toBN(10).pow(web3.utils.toBN(vntDecimals))).toString();
-        await vntToken.methods.approve(CONFIG[NETWORK].swapContractAddress, vntAmount).send({
-            from: currentAccount,
-            gas: GAS_LIMIT,
-            gasPrice: gasPrice
-        });
-        console.log('✅ VNT approved');
-        console.log('✅ Complete fix done!');
-        showMessage('✅ All approvals done! Now try swapping.', 'success');
+        await approveUSDT();
+        await approveVNT();
+        showMessage('✅ All approvals done!', 'success');
     } catch (error) {
-        console.error('Fix error:', error);
         showMessage('Error: ' + error.message, 'error');
     }
 }
 
-// Expose functions to window for console debugging
 window.checkContractStatus = checkContractStatus;
 window.approveUSDT = approveUSDT;
 window.approveVNT = approveVNT;
-window.checkAllowances = checkAllowances;
 window.completeFix = completeFix;
 
 console.log('✅ All debug functions loaded!');
-console.log('📝 Available commands:');
-console.log('  checkContractStatus() - Check all contract status');
-console.log('  approveUSDT() - Approve USDT for spending');
-console.log('  approveVNT() - Approve VNT for spending');
-console.log('  checkAllowances() - Check token allowances');
-console.log('  completeFix() - Run complete fix (approve both tokens)');
