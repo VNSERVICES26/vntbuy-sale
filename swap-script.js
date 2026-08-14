@@ -21,7 +21,7 @@ let contractInitialized = false;
 let isProcessing = false;
 
 // Gas Settings
-const GAS_LIMIT = 800000;
+const GAS_LIMIT = 500000;
 
 async function getGasPrice() {
     try {
@@ -32,9 +32,6 @@ async function getGasPrice() {
     }
 }
 
-// ============================================================
-// formatUnits Function
-// ============================================================
 function formatUnits(value, decimals = 18, maxFractionDigits = 6) {
     try {
         if (!web3) return '0';
@@ -75,9 +72,6 @@ function formatUnits(value, decimals = 18, maxFractionDigits = 6) {
     }
 }
 
-// ============================================================
-// toTokenUnits Function
-// ============================================================
 function toTokenUnits(amount, decimals = 18) {
     try {
         if (!web3 || !amount || amount === '' || isNaN(Number(amount))) {
@@ -128,9 +122,6 @@ const TOKEN_ABI = [
     {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
 ];
 
-// ============================================================
-// initContracts Function
-// ============================================================
 async function initContracts() {
     try {
         const config = CONFIG[NETWORK];
@@ -175,7 +166,6 @@ async function initContracts() {
             console.warn('Error getting decimals, using defaults:', err);
         }
         
-        // ===== UI UPDATE =====
         updateAllUI();
         
         contractInitialized = true;
@@ -194,9 +184,6 @@ async function initContracts() {
     }
 }
 
-// ============================================================
-// UI Update Function
-// ============================================================
 function updateAllUI() {
     const vntPriceEl = document.getElementById('vntPrice');
     const vnstPriceEl = document.getElementById('vnstPrice');
@@ -231,9 +218,6 @@ function updateAllUI() {
     }
 }
 
-// ============================================================
-// updateBuyQuote
-// ============================================================
 async function updateBuyQuote() {
     if (!contractInitialized || !currentAccount) return;
     
@@ -317,9 +301,6 @@ async function updateBuyQuote() {
     }
 }
 
-// ============================================================
-// updateSellQuote
-// ============================================================
 async function updateSellQuote() {
     if (!contractInitialized || !currentAccount) return;
     const vntAmount = document.getElementById('vntAmountSell').value;
@@ -363,9 +344,6 @@ async function updateSellQuote() {
     }
 }
 
-// ============================================================
-// updateSwapQuote
-// ============================================================
 async function updateSwapQuote() {
     if (!contractInitialized || !currentAccount) return;
     const vntAmount = document.getElementById('vntAmountSwap').value;
@@ -399,9 +377,6 @@ async function updateSwapQuote() {
     }
 }
 
-// ============================================================
-// Wallet Functions
-// ============================================================
 async function checkWalletConnection() {
     if (window.ethereum) {
         try {
@@ -502,9 +477,6 @@ function updateUI() {
     if (walletInfo) walletInfo.classList.toggle('hidden', !isConnected);
 }
 
-// ============================================================
-// Allowance Functions
-// ============================================================
 async function checkAllowance(token, owner, spender, amount) {
     try {
         const allowance = await token.methods.allowance(owner, spender).call();
@@ -536,9 +508,6 @@ async function approveToken(token, spender, amount, tokenName) {
     }
 }
 
-// ============================================================
-// Buy Functions
-// ============================================================
 async function buyVNT() {
     if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
@@ -663,9 +632,6 @@ async function buyVNST() {
     isProcessing = false;
 }
 
-// ============================================================
-// Sell Function
-// ============================================================
 async function sellVNT() {
     if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
@@ -731,9 +697,6 @@ async function sellVNT() {
     isProcessing = false;
 }
 
-// ============================================================
-// Swap Function
-// ============================================================
 async function swapVNTToVNST() {
     if (isProcessing) return;
     if (!contractInitialized || !currentAccount) {
@@ -791,9 +754,6 @@ async function swapVNTToVNST() {
     isProcessing = false;
 }
 
-// ============================================================
-// Setup Functions
-// ============================================================
 function setupTabSystem() {
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -838,9 +798,6 @@ function setupInputListeners() {
     if (vntSwapInput) vntSwapInput.addEventListener('input', updateSwapQuote);
 }
 
-// ============================================================
-// Mobile Auto-Scroll Prevention
-// ============================================================
 (function preventAutoScroll() {
     window.addEventListener('load', function() {
         document.documentElement.style.scrollBehavior = 'auto';
@@ -863,9 +820,6 @@ function setupInputListeners() {
     }, { passive: true });
 })();
 
-// ============================================================
-// Initialize
-// ============================================================
 window.addEventListener('load', async () => {
     try {
         console.log('🔄 VirsenSwap UI initializing on mainnet...');
@@ -882,9 +836,6 @@ window.addEventListener('load', async () => {
     }
 });
 
-// ============================================================
-// Debug Functions
-// ============================================================
 async function checkContractStatus() {
     try {
         console.log('===== 📊 CONTRACT STATUS CHECK =====');
