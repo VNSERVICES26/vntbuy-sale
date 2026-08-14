@@ -88,9 +88,6 @@
             <button class="tab-button" data-tab="swap">Swap</button>
         </div>
 
-        <!-- ============================================================
-        BUY SECTION
-        ============================================================ -->
         <div id="buySection" class="tab-content active">
 
             <!-- Info Card -->
@@ -104,17 +101,30 @@
                     <span class="info-value gold" id="vnstPrice">Loading...</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Min Swap</span>
-                    <span class="info-value cyan" id="minSwapAmount">Loading...</span>
+                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Min VNT Buy</span>
+                    <span class="info-value cyan" id="minVNTBuyDisplay">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-exclamation-triangle"></i> Min VNST Buy</span>
+                    <span class="info-value cyan" id="minVNSTBuyDisplay">Loading...</span>
                 </div>
             </div>
 
             <!-- Swap Form -->
             <div class="swap-container">
                 <div class="swap-form">
+                    <!-- Token Selector -->
                     <div class="input-group">
-                        <label for="usdtAmountBuy"><i class="fas fa-coins"></i> USDT Amount</label>
-                        <input type="number" id="usdtAmountBuy" placeholder="Enter USDT amount" step="any" min="0" autocomplete="off" />
+                        <label for="tokenSelectBuy"><i class="fas fa-coins"></i> Select Token</label>
+                        <select id="tokenSelectBuy" class="token-select">
+                            <option value="VNT">VNT</option>
+                            <option value="VNST">VNST</option>
+                        </select>
+                    </div>
+            
+                    <div class="input-group">
+                        <label for="tokenAmountBuy"><i class="fas fa-coins"></i> Token Amount</label>
+                        <input type="number" id="tokenAmountBuy" placeholder="Enter VNT or VNST amount" step="any" min="0" autocomplete="off" />
                     </div>
 
                     <div class="action-buttons">
@@ -131,8 +141,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-
+         <div>
         <!-- ============================================================
         SELL SECTION
         ============================================================ -->
