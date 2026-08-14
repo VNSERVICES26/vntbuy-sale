@@ -132,25 +132,58 @@ function toTokenUnits(amount, decimals = 18) {
     }
 }
 
+// formatUnits फंक्शन को पूरी तरह REPLACE करें:
 function formatUnits(value, decimals = 18, maxFractionDigits = 6) {
     try {
         if (!web3) return '0';
+        if (value === undefined || value === null || value === '') return '0';
+        
         const BN = web3.utils.toBN;
         let bnValue;
+        
+        // अलग-अलग तरह के इनपुट को हैंडल करें
         if (typeof value === 'string' && value.match(/^\d+$/)) {
             bnValue = BN(value);
         } else if (typeof value === 'number') {
             bnValue = BN(String(Math.floor(value)));
         } else if (value && value.toString) {
-            try { bnValue = BN(value.toString()); } catch (e) { return String(value); }
-        } else { return '0'; }
+            try { 
+                bnValue = BN(value.toString()); 
+            } catch (e) { 
+                return String(value); 
+            }
+        } else { 
+            return '0'; 
+        }
+        
+        // जीरो वैल्यू के लिए
+        if (bnValue.isZero()) return '0';
+        
         const base = BN(10).pow(BN(decimals));
+        
+        // अगर वैल्यू 1 यूनिट से कम है
+        if (bnValue.lt(base)) {
+            let fractionBN = bnValue.toString().padStart(decimals, '0');
+            // पीछे के जीरो हटाएं
+            fractionBN = fractionBN.replace(/0+$/, '');
+            if (fractionBN === '') return '0';
+            // सही डेसिमल प्लेसेस के लिए
+            const whole = '0';
+            let fraction = fractionBN;
+            while (fraction.length < maxFractionDigits && fraction.length < decimals) {
+                fraction += '0';
+            }
+            return `0.${fraction}`;
+        }
+        
+        // नॉर्मल केस - वैल्यू 1 या ज्यादा है
         const whole = bnValue.div(base).toString();
         let fractionBN = bnValue.mod(base).toString().padStart(decimals, '0');
-        if (Number(fractionBN) === 0) return Number(whole).toLocaleString();
-        fractionBN = fractionBN.substring(0, maxFractionDigits);
+        // पीछे के जीरो हटाएं
         fractionBN = fractionBN.replace(/0+$/, '');
         if (fractionBN === '') return Number(whole).toLocaleString();
+        // फ्रैक्शन डिजिट्स लिमिट करें
+        fractionBN = fractionBN.substring(0, maxFractionDigits);
         return `${Number(whole).toLocaleString()}.${fractionBN}`;
     } catch (error) {
         console.error('formatUnits error:', error);
@@ -332,14 +365,14 @@ async function initContracts() {
         const swapRateEl = document.getElementById('swapRate');
         const swapMinEl = document.getElementById('swapMin');
         
-        if (vntPriceEl) vntPriceEl.textContent = formatUnits(vntPrice, 18) + ' USDT';
-        if (vnstPriceEl) vnstPriceEl.textContent = formatUnits(vnstPrice, 18) + ' USDT';
-        if (minSwapAmountEl) minSwapAmountEl.textContent = formatUnits(minVNTBuyAmount, 18) + ' USDT/VNT';
-        if (sellVNTPriceEl) sellVNTPriceEl.textContent = formatUnits(vntPrice, 18) + ' USDT/VNT';
-        if (sellMinSwapEl) sellMinSwapEl.textContent = formatUnits(minVNTBuyAmount, 18) + ' VNT';
-        if (sellMaxSwapEl) sellMaxSwapEl.textContent = formatUnits(maxVNTSaleAmount, 18) + ' VNT';
-        if (swapRateEl) swapRateEl.textContent = formatUnits(vntToVnstPrice, 18) + ' VNST/VNT';
-        if (swapMinEl) swapMinEl.textContent = formatUnits(minVNTSwapAmount, 18) + ' VNT';
+        if (vntPriceEl) vntPriceEl.textContent = formatUnits(vntPrice, 18, 4) + ' USDT';
+        if (vnstPriceEl) vnstPriceEl.textContent = formatUnits(vnstPrice, 18, 4) + ' USDT';
+        if (minSwapAmountEl) minSwapAmountEl.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' USDT/VNT';
+        if (sellVNTPriceEl) sellVNTPriceEl.textContent = formatUnits(vntPrice, 18, 4) + ' USDT/VNT';
+        if (sellMinSwapEl) sellMinSwapEl.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' VNT';
+        if (sellMaxSwapEl) sellMaxSwapEl.textContent = formatUnits(maxVNTSaleAmount, 18, 2) + ' VNT';
+        if (swapRateEl) swapRateEl.textContent = formatUnits(vntToVnstPrice, 18, 4) + ' VNST/VNT';
+        if (swapMinEl) swapMinEl.textContent = formatUnits(minVNTSwapAmount, 18, 2) + ' VNT';
         
         contractInitialized = true;
         if (currentAccount) {
