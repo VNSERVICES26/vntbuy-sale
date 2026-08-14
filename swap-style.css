@@ -1273,3 +1273,51 @@ body.loaded {
     scroll-behavior: smooth;
 }
 
+/* ============================================================
+   TOKEN SELECTOR STYLES
+   ============================================================ */
+.token-select {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: var(--radius-input);
+    background: rgba(0, 0, 0, 0.30);
+    border: 1px solid var(--border-normal);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    transition: var(--transition);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.token-select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 4px rgba(0, 184, 255, 0.06);
+}
+
+.token-select option {
+    background: var(--bg-secondary);
+    color: var(--white);
+}
+
+/* ============================================================
+   MOBILE AUTO-SCROLL FIX
+   ============================================================ */
+#walletInfo {
+    min-height: 80px;
+}
+
+@media (max-width: 720px) {
+    #walletInfo {
+        min-height: 120px;
+    }
+}
+
+html {
+    scroll-behavior: auto !important;
+}
+
+body.loaded {
+    scroll-behavior: smooth;
+}
