@@ -3,14 +3,38 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="VirsenSwap">
+    <meta name="theme-color" content="#F4C542">
+    <meta name="msapplication-TileColor" content="#F4C542">
+    <meta name="description" content="VirsenSwap - Swap VNT, VNST and USDT tokens with ease. Fast, secure and transparent token swaps.">
+    <meta name="keywords" content="VirsenSwap, VNT, VNST, USDT, swap, crypto, BSC, Binance Smart Chain, DeFi">
+    <meta property="og:title" content="VirsenSwap - VNT/VNST/USDT Swap">
+    <meta property="og:description" content="Swap VNT, VNST and USDT tokens with ease on VirsenSwap.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/logo.png">
+    <meta property="og:url" content="https://vr5stake.in">
+    <meta property="og:site_name" content="VirsenSwap">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="VirsenSwap - VNT/VNST/USDT Swap">
+    <meta name="twitter:description" content="Swap VNT, VNST and USDT tokens with ease on VirsenSwap.">
+    <meta name="twitter:image" content="assets/logo.png">
     <title>VirsenSwap - VNT/VNST/USDT</title>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="swap-style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-    </script>
-
-    <link rel="icon" href="data:," />
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/android-chrome-512x512.png">
+    
 </head>
 
 <body>
@@ -26,10 +50,12 @@
             </button>
 
             <ul class="nav-links" id="navMenu">
-                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html" class="active">Home</a></li>
                 <li><a href="stake.html">Stake</a></li>
                 <li><a href="team.html">Team</a></li>
-                <li><a href="swap.html" class="active">Swap</a></li>
+                <li><a href="apr.html">VNT Apr</a></li>
+                <li><a href="/diamond/">VNTT Diamond</a></li>
+                <li><a href="swap.html">VirsenSwap</a></li>
                 <li>
                     <button id="connectWalletBtn" class="nav-connect-btn">
                         <i class="fas fa-wallet"></i> Connect Wallet
