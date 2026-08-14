@@ -29,7 +29,6 @@
     <nav class="navbar" id="navbar">
         <div class="container">
             <a href="index.html" class="logo">
-                <!-- Logo Image (optional) -->
                 <img src="assets/logo.png" alt="VirsenSwap Logo" onerror="this.style.display='none'" />
                 <span class="logo-text">VirsenSwap</span>
             </a>
@@ -88,6 +87,9 @@
             <button class="tab-button" data-tab="swap">Swap</button>
         </div>
 
+        <!-- ============================================================
+        BUY SECTION
+        ============================================================ -->
         <div id="buySection" class="tab-content active">
 
             <!-- Info Card -->
@@ -141,7 +143,8 @@
                     </div>
                 </div>
             </div>
-         <div>
+        </div>
+
         <!-- ============================================================
         SELL SECTION
         ============================================================ -->
@@ -245,19 +248,16 @@
 
     <!-- Mobile Menu & Navbar Scripts -->
     <script>
-        // ---- Mobile Menu Toggle ----
         document.getElementById('mobileMenuBtn').addEventListener('click', function() {
             document.getElementById('navMenu').classList.toggle('open');
         });
 
-        // ---- Close menu on link click ----
         document.querySelectorAll('.nav-links a').forEach(function(link) {
             link.addEventListener('click', function() {
                 document.getElementById('navMenu').classList.remove('open');
             });
         });
 
-        // ---- Navbar Scroll Effect ----
         window.addEventListener('scroll', function() {
             var navbar = document.getElementById('navbar');
             if (window.scrollY > 50) {
