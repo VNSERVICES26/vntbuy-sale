@@ -186,9 +186,8 @@ async function initContracts() {
                 return;
             }
             console.log('🔄 Swap Executed:', event.returnValues);
-            showMessage(`✅ Swap हुआ: ${formatUnits(event.returnValues.amountIn, 18, 2)} → ${formatUnits(event.returnValues.amountOut, 18, 2)}`, 'success');
+            showMessage(`✅ Swap success: ${formatUnits(event.returnValues.amountIn, 18, 2)} → ${formatUnits(event.returnValues.amountOut, 18, 2)}`, 'success');
             updateWalletInfo();
-            updateTreasuryBalances();
         });
         
         try {
@@ -223,11 +222,8 @@ async function initContracts() {
             showMessage('⚠️ कॉन्ट्रैक्ट इनिशियलाइज़ नहीं हुआ - पहले prices सेट करें', 'error');
             console.warn('Contract not initialized - Run initialize() first');
         }
-
-        // कॉन्ट्रैक्ट की अन्य जानकारी लोड करेगा
+        
         await updateContractInfo();
-        await updateTreasuryBalances();
-
         
         contractInitialized = true;
         if (currentAccount) {
@@ -296,37 +292,16 @@ function updateAllUI() {
 
 async function updateContractInfo() {
     try {
-        const splitPerc = await swapContract.methods.splitPercentage().call();
+        
         const dailyLimit = await swapContract.methods.dailySellLimit().call();
-        const totalSwapped = await swapContract.methods.totalSwapped().call();
         
-        const splitEl = document.getElementById('splitPercentage');
         const dailyLimitEl = document.getElementById('dailySellLimitDisplay');
-        const totalSwappedEl = document.getElementById('totalSwappedDisplay');
         
-        if (splitEl) splitEl.textContent = splitPerc + '%';
-        if (dailyLimitEl) dailyLimitEl.textContent = formatUnits(dailyLimit, 18, 0);
-        if (totalSwappedEl) totalSwappedEl.textContent = formatUnits(totalSwapped, 18, 0);
+        if (dailyLimitEl) { 
+            dailyLimitEl.textContent = formatUnits(dailyLimit, 18, 0);
+        }      
     } catch (error) {
         console.error('Error loading contract info:', error);
-    }
-}
-
-async function updateTreasuryBalances() {
-    try {
-        const balances = await swapContract.methods.getTreasuryBalances().call();
-        
-        const vntBalEl = document.getElementById('treasuryVNT');
-        const vnstBalEl = document.getElementById('treasuryVNST');
-        const usdtBalEl = document.getElementById('treasuryUSDT');
-        const bnbBalEl = document.getElementById('treasuryBNB');
-        
-        if (vntBalEl) vntBalEl.textContent = formatUnits(balances.vntBal, 18, 2);
-        if (vnstBalEl) vnstBalEl.textContent = formatUnits(balances.vnstBal, 18, 2);
-        if (usdtBalEl) usdtBalEl.textContent = formatUnits(balances.usdtBal, 18, 2);
-        if (bnbBalEl) bnbBalEl.textContent = formatUnits(balances.bnbBal, 18, 4) + ' BNB';
-    } catch (error) {
-        console.error('Error loading treasury balances:', error);
     }
 }
 
