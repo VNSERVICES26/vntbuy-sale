@@ -177,6 +177,19 @@ async function initContracts() {
         vntToken = new web3.eth.Contract(TOKEN_ABI, config.vntTokenAddress);
         vnstToken = new web3.eth.Contract(TOKEN_ABI, config.vnstTokenAddress);
         usdtToken = new web3.eth.Contract(TOKEN_ABI, config.usdtTokenAddress);
+
+        swapContract.events.SwapExecuted({
+            fromBlock: 'latest'
+        }, (error, event) => {
+            if (error) {
+                console.error('SwapExecuted event error:', error);
+                return;
+            }
+            console.log('🔄 Swap Executed:', event.returnValues);
+            showMessage(`✅ Swap हुआ: ${formatUnits(event.returnValues.amountIn, 18, 2)} → ${formatUnits(event.returnValues.amountOut, 18, 2)}`, 'success');
+            updateWalletInfo();
+            updateTreasuryBalances();
+        });
         
         try {
             vntPrice = await swapContract.methods.vntPrice().call();
@@ -204,6 +217,17 @@ async function initContracts() {
         }
         
         updateAllUI();
+
+        const initialized = await swapContract.methods.initialized().call();
+        if (!initialized) {
+            showMessage('⚠️ कॉन्ट्रैक्ट इनिशियलाइज़ नहीं हुआ - पहले prices सेट करें', 'error');
+            console.warn('Contract not initialized - Run initialize() first');
+        }
+
+        // कॉन्ट्रैक्ट की अन्य जानकारी लोड करेगा
+        await updateContractInfo();
+        await updateTreasuryBalances();
+
         
         contractInitialized = true;
         if (currentAccount) {
@@ -268,6 +292,42 @@ function updateAllUI() {
     if (swapMinEl) swapMinEl.textContent = formatUnits(minVNTSwapAmount, 18, 2) + ' VNT';
     if (minVNTDisplay) minVNTDisplay.textContent = formatUnits(minVNTBuyAmount, 18, 2) + ' VNT';
     if (minVNSTDisplay) minVNSTDisplay.textContent = formatUnits(minVNSTBuyAmount, 18, 2) + ' VNST';
+}
+
+async function updateContractInfo() {
+    try {
+        const splitPerc = await swapContract.methods.splitPercentage().call();
+        const dailyLimit = await swapContract.methods.dailySellLimit().call();
+        const totalSwapped = await swapContract.methods.totalSwapped().call();
+        
+        const splitEl = document.getElementById('splitPercentage');
+        const dailyLimitEl = document.getElementById('dailySellLimitDisplay');
+        const totalSwappedEl = document.getElementById('totalSwappedDisplay');
+        
+        if (splitEl) splitEl.textContent = splitPerc + '%';
+        if (dailyLimitEl) dailyLimitEl.textContent = formatUnits(dailyLimit, 18, 0);
+        if (totalSwappedEl) totalSwappedEl.textContent = formatUnits(totalSwapped, 18, 0);
+    } catch (error) {
+        console.error('Error loading contract info:', error);
+    }
+}
+
+async function updateTreasuryBalances() {
+    try {
+        const balances = await swapContract.methods.getTreasuryBalances().call();
+        
+        const vntBalEl = document.getElementById('treasuryVNT');
+        const vnstBalEl = document.getElementById('treasuryVNST');
+        const usdtBalEl = document.getElementById('treasuryUSDT');
+        const bnbBalEl = document.getElementById('treasuryBNB');
+        
+        if (vntBalEl) vntBalEl.textContent = formatUnits(balances.vntBal, 18, 2);
+        if (vnstBalEl) vnstBalEl.textContent = formatUnits(balances.vnstBal, 18, 2);
+        if (usdtBalEl) usdtBalEl.textContent = formatUnits(balances.usdtBal, 18, 2);
+        if (bnbBalEl) bnbBalEl.textContent = formatUnits(balances.bnbBal, 18, 4) + ' BNB';
+    } catch (error) {
+        console.error('Error loading treasury balances:', error);
+    }
 }
 
 // ============================================================
@@ -527,6 +587,16 @@ async function updateWalletInfo() {
         if (vnstBalance) vnstBalance.textContent = formatUnits(vnstBal, vnstDecimals);
         if (usdtBalance) usdtBalance.textContent = formatUnits(usdtBal, usdtDecimals);
         if (walletInfo) walletInfo.classList.remove('hidden');
+
+        try {
+            const remainingLimit = await swapContract.methods.getRemainingSellLimit(currentAccount).call();
+            const remainingEl = document.getElementById('remainingSellLimit');
+            if (remainingEl) {
+                remainingEl.textContent = formatUnits(remainingLimit, 18, 2) + ' VNT';
+            }
+        } catch (error) {
+            console.error('Error getting remaining limit:', error);
+        }
     } catch (error) {
         console.error('Error updating wallet info:', error);
     }
@@ -551,6 +621,21 @@ async function checkAllowance(token, owner, spender, amount) {
     } catch (error) {
         console.error('Allowance check error:', error);
         return false;
+    }
+}
+
+// ये नया फंक्शन जोड़ें
+async function getAllAllowances() {
+    try {
+        const result = await swapContract.methods.getUserAllowances(currentAccount).call();
+        return {
+            vnt: result.vnt,
+            vnst: result.vnst,
+            usdt: result.usdt
+        };
+    } catch (error) {
+        console.error('Error getting all allowances:', error);
+        return null;
     }
 }
 
@@ -872,6 +957,79 @@ async function swapVNTToVNST() {
     }
     isProcessing = false;
 }
+
+// ============================================================
+// इमरजेंसी फंक्शन्स - सिर्फ owner ही use कर सकता है
+// ============================================================
+async function emergencyWithdrawToken(tokenAddress, amount) {
+    if (isProcessing) return;
+    if (!contractInitialized || !currentAccount) {
+        showMessage('पहले wallet connect करें', 'error');
+        return;
+    }
+    
+    isProcessing = true;
+    try {
+        showMessage('🔄 इमरजेंसी निकासी...', 'status');
+        const gasPrice = await getGasPrice();
+        
+        const method = swapContract.methods.emergencyWithdraw(tokenAddress, amount);
+        const params = { from: currentAccount };
+        
+        const gasEstimate = await method.estimateGas(params);
+        const gasLimit = Math.floor(Number(gasEstimate) * 1.2);
+        
+        await method.send({
+            from: currentAccount,
+            gas: gasLimit,
+            gasPrice: gasPrice
+        });
+        
+        showMessage('✅ इमरजेंसी निकासी सफल!', 'success');
+        await updateWalletInfo();
+    } catch (error) {
+        console.error('Emergency withdraw error:', error);
+        showMessage(`Failed: ${error.message}`, 'error');
+    }
+    isProcessing = false;
+}
+
+async function emergencyWithdrawBNB(amount) {
+    if (isProcessing) return;
+    if (!contractInitialized || !currentAccount) {
+        showMessage('पहले wallet connect करें', 'error');
+        return;
+    }
+    
+    isProcessing = true;
+    try {
+        showMessage('🔄 BNB निकासी...', 'status');
+        const gasPrice = await getGasPrice();
+        
+        const method = swapContract.methods.emergencyWithdrawBNB(amount);
+        const params = { from: currentAccount };
+        
+        const gasEstimate = await method.estimateGas(params);
+        const gasLimit = Math.floor(Number(gasEstimate) * 1.2);
+        
+        await method.send({
+            from: currentAccount,
+            gas: gasLimit,
+            gasPrice: gasPrice
+        });
+        
+        showMessage('✅ BNB निकासी सफल!', 'success');
+        await updateWalletInfo();
+    } catch (error) {
+        console.error('BNB withdraw error:', error);
+        showMessage(`Failed: ${error.message}`, 'error');
+    }
+    isProcessing = false;
+}
+
+// इमरजेंसी फंक्शन को globally accessible बनाएं
+window.emergencyWithdrawToken = emergencyWithdrawToken;
+window.emergencyWithdrawBNB = emergencyWithdrawBNB;
 
 // ============================================================
 // Setup Functions
