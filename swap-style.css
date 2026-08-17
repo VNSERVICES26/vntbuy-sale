@@ -735,14 +735,6 @@ body {
     text-align: center;
 }
 
-html {
-    scroll-behavior: auto !important;
-}
-
-body.loaded {
-    scroll-behavior: smooth;
-}
-
 .card,
 .swap-card,
 .info-card,
